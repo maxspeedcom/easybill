@@ -39,6 +39,8 @@ Thai Online Accounting Software — Quotation · Invoice · Delivery · Tax Invo
 | ลิงก์ | สำหรับ |
 |---|---|
 | 📖 [**คู่มือการใช้งานฉบับสมบูรณ์**](docs/USER_GUIDE.md) | ผู้ใช้ทั่วไป — ครอบคลุม 14 หัวข้อตั้งแต่ login ถึง backup |
+| 🐧 [**ติดตั้งบน Ubuntu / Debian**](docs/INSTALL_UBUNTU.md) | คู่มือ deploy production บน Linux (auto + manual) |
+| 🐳 [**ติดตั้งด้วย Docker**](docs/INSTALL_DOCKER.md) | รันทุก OS — Mac / Windows / Linux ผ่าน container |
 | 🔄 [**Workflow แปลงเอกสาร**](docs/workflow.svg) | ลำดับการสร้างเอกสาร QT → IV → DO → TI → RC |
 
 ## 📸 ตัวอย่างหน้าจอ
@@ -51,32 +53,35 @@ Thai Online Accounting Software — Quotation · Invoice · Delivery · Tax Invo
 
 ## 🛠️ การติดตั้ง
 
-### ความต้องการ
-- Python 3.10+
-- pip
-- Linux / macOS (Windows ใช้ WSL ก็ได้)
-
-### Clone และรัน
+### 🐳 Docker (เร็วที่สุด — รันได้ทุก OS)
 
 ```bash
 git clone https://github.com/maxspeedcom/easybill.git
 cd easybill
-
-python3 -m venv venv
-source venv/bin/activate
-
-pip install -r requirements.txt
-
-python wsgi.py
+docker compose up -d
 ```
 
-เปิดเบราว์เซอร์ที่ http://localhost:5000
+เปิด http://localhost:8000 → คู่มือเต็ม → [INSTALL_DOCKER.md](docs/INSTALL_DOCKER.md)
 
-### Deploy แบบ production (systemd + nginx)
+### 🐧 Ubuntu / Debian (auto installer)
 
 ```bash
-sudo bash scripts/upgrade.sh
-sudo systemctl restart thaibill
+sudo git clone https://github.com/maxspeedcom/easybill.git /opt/thaibill
+cd /opt/thaibill
+sudo bash scripts/install.sh
+```
+
+สคริปต์จะติดตั้ง Python + dependencies + systemd service + nginx ให้ทั้งหมด → คู่มือเต็ม → [INSTALL_UBUNTU.md](docs/INSTALL_UBUNTU.md)
+
+### 💻 Dev mode (รันบนเครื่องตัวเอง)
+
+```bash
+git clone https://github.com/maxspeedcom/easybill.git
+cd easybill
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python wsgi.py
 ```
 
 ## ⚙️ ค่าเริ่มต้น
@@ -134,7 +139,7 @@ easybill/
 │   ├── migrate_v1_to_v2.py  # DB migration
 │   └── upgrade.sh           # Deploy script
 ├── instance/            # (gitignored) SQLite DB
-├── wsgi.py              # entry point
+├── wsgi.py              # entry point (production: gunicorn, dev: python wsgi.py)
 └── requirements.txt
 ```
 

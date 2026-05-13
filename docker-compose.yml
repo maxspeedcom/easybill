@@ -1,0 +1,39 @@
+services:
+  easybill:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: easybill:latest
+    container_name: easybill
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      FLASK_ENV: production
+      SECRET_KEY: ${SECRET_KEY:-please-change-this-secret-key}
+      TZ: Asia/Bangkok
+    volumes:
+      - ./data/instance:/app/instance
+      - ./data/uploads:/app/app/static/uploads
+      - ./data/logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/login"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  nginx:
+    image: nginx:alpine
+    container_name: easybill-nginx
+    restart: unless-stopped
+    profiles: ["with-nginx"]
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - easybill
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./data/nginx-logs:/var/log/nginx
