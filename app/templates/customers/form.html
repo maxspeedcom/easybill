@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% block page_title %}{% if customer.id %}{{ _('แก้ไข') }}{{ _('ลูกค้า') }}{% else %}{{ _('เพิ่ม') }}{{ _('ลูกค้า') }}{% endif %}{% endblock %}
+{% block content %}
+<form method="post">
+<div class="row">
+  <div class="col-md-8">
+    <div class="card card-outline card-primary">
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-4 form-group">
+            <label>{{ _('รหัสลูกค้า') }}</label>
+            <input class="form-control" name="code" value="{{ customer.code or '' }}" placeholder="{{ _('เว้นว่างเพื่อสร้างอัตโนมัติ') }}">
+          </div>
+          <div class="col-md-8 form-group">
+            <label>{{ _('ชื่อลูกค้า / กิจการ') }} <span class="text-danger">*</span></label>
+            <input class="form-control" name="name" value="{{ customer.name or '' }}" required autofocus>
+          </div>
+          <div class="col-md-4 form-group">
+            <label>{{ _('ประเภท') }}</label>
+            <select class="form-control" name="customer_type">
+              <option value="company" {% if customer.customer_type == 'company' %}selected{% endif %}>{{ _('นิติบุคคล') }}</option>
+              <option value="person"  {% if customer.customer_type == 'person'  %}selected{% endif %}>{{ _('บุคคลธรรมดา') }}</option>
+            </select>
+          </div>
+          <div class="col-md-4 form-group">
+            <label>{{ _('เลขประจำตัวผู้เสียภาษี') }}</label>
+            <input class="form-control" name="tax_id" value="{{ customer.tax_id or '' }}" maxlength="13">
+          </div>
+          <div class="col-md-4 form-group">
+            <label>{{ _('สาขา') }}</label>
+            <input class="form-control" name="branch" value="{{ customer.branch or 'สำนักงานใหญ่' }}">
+          </div>
+          <div class="col-12 form-group">
+            <label>{{ _('ที่อยู่') }}</label>
+            <textarea class="form-control" name="address" rows="3">{{ customer.address or '' }}</textarea>
+          </div>
+          <div class="col-md-6 form-group">
+            <label>{{ _('ผู้ติดต่อ') }}</label>
+            <input class="form-control" name="contact_person" value="{{ customer.contact_person or '' }}">
+          </div>
+          <div class="col-md-3 form-group">
+            <label>{{ _('โทรศัพท์') }}</label>
+            <input class="form-control" name="phone" value="{{ customer.phone or '' }}">
+          </div>
+          <div class="col-md-3 form-group">
+            <label>{{ _('เครดิต (วัน)') }}</label>
+            <input class="form-control" type="number" name="credit_days" value="{{ customer.credit_days or 30 }}">
+          </div>
+          <div class="col-md-6 form-group">
+            <label>{{ _('อีเมล') }}</label>
+            <input class="form-control" type="email" name="email" value="{{ customer.email or '' }}">
+          </div>
+          <div class="col-12 form-group mb-0">
+            <label>{{ _('หมายเหตุ') }}</label>
+            <textarea class="form-control" name="note" rows="2">{{ customer.note or '' }}</textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card"><div class="card-body">
+      <button class="btn btn-primary btn-block" type="submit"><i class="fas fa-save"></i> {{ _('บันทึก') }}</button>
+      <a class="btn btn-default btn-block" href="{{ url_for('customers.index') }}">{{ _('ยกเลิก') }}</a>
+      {% if customer.id %}
+      <hr>
+      <form method="post" action="{{ url_for('customers.delete', cid=customer.id) }}" onsubmit="return confirm('{{ _('ลบ') }}?');">
+        <button class="btn btn-outline-danger btn-block btn-sm"><i class="fas fa-trash"></i> {{ _('ลบ') }}{{ _('ลูกค้า') }}</button>
+      </form>
+      {% endif %}
+    </div></div>
+  </div>
+</div>
+</form>
+{% endblock %}

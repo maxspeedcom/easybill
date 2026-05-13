@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block page_title %}<i class="fas fa-plus-circle mr-2"></i>เพิ่มบริษัท / กิจการใหม่{% endblock %}
+{% block content %}
+<form method="post">
+<div class="row">
+  <div class="col-md-8">
+    <div class="card"><div class="card-body">
+      <div class="form-group">
+        <label>ชื่อบริษัท / กิจการ <span class="text-danger">*</span></label>
+        <input class="form-control" name="name" required autofocus
+               placeholder="เช่น บริษัท เอบีซี จำกัด">
+      </div>
+      <div class="row">
+        <div class="col-md-6 form-group">
+          <label>สาขา</label>
+          <input class="form-control" name="branch" value="สำนักงานใหญ่">
+        </div>
+        <div class="col-md-6 form-group">
+          <label>เลขประจำตัวผู้เสียภาษี</label>
+          <input class="form-control" name="tax_id">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>ที่อยู่</label>
+        <textarea class="form-control" name="address" rows="2"></textarea>
+      </div>
+      <div class="row">
+        <div class="col-md-4 form-group">
+          <label>เบอร์โทร</label>
+          <input class="form-control" name="phone">
+        </div>
+        <div class="col-md-4 form-group">
+          <label>อีเมล</label>
+          <input class="form-control" name="email" type="email">
+        </div>
+        <div class="col-md-4 form-group">
+          <label>เว็บไซต์</label>
+          <input class="form-control" name="website">
+        </div>
+      </div>
+      <div class="alert alert-info mb-0">
+        <i class="fas fa-info-circle"></i>
+        ลูกค้า สินค้า เอกสาร และหมวดของบริษัทใหม่จะแยกจากของบริษัทเดิม
+        — ต้องเริ่มเพิ่มข้อมูลใหม่หลังสร้าง
+      </div>
+    </div></div>
+  </div>
+  <div class="col-md-4">
+    <div class="card"><div class="card-body">
+      <button class="btn btn-save btn-block" type="submit"><i class="fas fa-plus"></i> เพิ่มบริษัท</button>
+      <a class="btn btn-default btn-block" href="{{ url_for('settings.index') }}">ยกเลิก</a>
+    </div></div>
+  </div>
+</div>
+</form>
+{% endblock %}

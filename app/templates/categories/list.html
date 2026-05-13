@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block page_title %}<i class="fas fa-tags mr-2"></i>กลุ่มจัดประเภท{% endblock %}
+{% block topbar_actions %}
+<a class="btn btn-primary" href="{{ url_for('categories.edit') }}"><i class="fas fa-plus"></i> เพิ่มกลุ่ม</a>
+{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-body p-0">
+    <table class="table table-hover mb-0">
+      <thead><tr><th style="width:60px;">สี</th><th>ชื่อกลุ่ม</th><th>คำอธิบาย</th><th style="width:120px;">เอกสาร</th><th style="width:100px;"></th></tr></thead>
+      <tbody>
+        {% for c in categories %}
+        <tr>
+          <td><span style="display:inline-block;width:24px;height:24px;border-radius:50%;background:{{ c.color }};"></span></td>
+          <td><a href="{{ url_for('categories.edit', cid=c.id) }}" class="font-weight-bold">{{ c.name }}</a></td>
+          <td class="text-muted">{{ c.description or '-' }}</td>
+          <td>{{ c.documents|length }}</td>
+          <td class="text-right">
+            <a class="btn btn-sm btn-default" href="{{ url_for('categories.edit', cid=c.id) }}"><i class="fas fa-edit"></i></a>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="text-center text-muted p-5">
+          <i class="fas fa-tags fa-3x mb-3 d-block"></i>
+          <h5>ยังไม่มีกลุ่มจัดประเภท</h5>
+          <a class="btn btn-primary mt-2" href="{{ url_for('categories.edit') }}"><i class="fas fa-plus"></i> เพิ่มกลุ่มแรก</a>
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

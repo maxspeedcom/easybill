@@ -1,0 +1,350 @@
+{% extends 'base.html' %}
+{% block page_title %}<i class="fas fa-cog mr-2"></i>{{ _('ตั้งค่าข้อมูลกิจการ') }}{% endblock %}
+
+{% block head %}
+<style>
+/* Inline ป้องกัน cache CSS เก่า — ปุ่มบันทึกต้องเด่นชัดเสมอ */
+.btn.btn-save,
+button.btn.btn-save,
+.btn.btn-save:focus,
+.btn.btn-save:active {
+  background-color: #28a745 !important;
+  background-image: linear-gradient(135deg, #28a745, #1e7e34) !important;
+  border: 2px solid #1e7e34 !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  font-size: 16px !important;
+  padding: 12px 20px !important;
+  box-shadow: 0 4px 10px rgba(40,167,69,0.4) !important;
+  text-shadow: 0 1px 1px rgba(0,0,0,0.15) !important;
+  border-radius: 6px !important;
+}
+.btn.btn-save:hover {
+  background-color: #218838 !important;
+  background-image: linear-gradient(135deg, #218838, #155724) !important;
+  color: #fff !important;
+  box-shadow: 0 6px 14px rgba(40,167,69,0.55) !important;
+  transform: translateY(-1px);
+}
+.btn.btn-save i { margin-right: 6px; color: #fff !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Tabs -->
+<ul class="nav nav-tabs" id="settings-tabs" role="tablist">
+  <li class="nav-item">
+    <a class="nav-link active" data-toggle="tab" href="#profile" role="tab">
+      <i class="fas fa-building mr-1"></i> {{ _('ข้อมูลกิจการ') }}
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" data-toggle="tab" href="#branding" role="tab">
+      <i class="fas fa-image mr-1"></i> {{ _('โลโก้') }} & {{ _('ลายเซ็น') }}
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" data-toggle="tab" href="#backup" role="tab">
+      <i class="fas fa-database mr-1"></i> {{ _('สำรองและกู้คืน') }}
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" data-toggle="tab" href="#gdrive" role="tab">
+      <i class="fab fa-google-drive mr-1"></i> Google Drive
+    </a>
+  </li>
+  {% if current_user.is_admin() %}
+  <li class="nav-item">
+    <a class="nav-link" href="{{ url_for('settings.oauth_settings') }}">
+      <i class="fas fa-key mr-1"></i> OAuth Login
+    </a>
+  </li>
+  {% endif %}
+</ul>
+
+<div class="tab-content bg-white border-left border-right border-bottom p-3" style="border-radius: 0 0 4px 4px;">
+
+  <!-- ============ Tab 1: Profile ============ -->
+  <div class="tab-pane fade show active" id="profile" role="tabpanel">
+    <form method="post" enctype="multipart/form-data" action="{{ url_for('settings.index') }}">
+      <input type="hidden" name="action" value="save">
+      <div class="row">
+        <div class="col-md-8">
+          <div class="row">
+            <div class="col-md-8 form-group">
+              <label>{{ _('ชื่อกิจการ') }} <span class="text-danger">*</span></label>
+              <input class="form-control" name="name" value="{{ company.name or '' }}" required>
+            </div>
+            <div class="col-md-4 form-group">
+              <label>{{ _('สาขา') }}</label>
+              <input class="form-control" name="branch" value="{{ company.branch or 'สำนักงานใหญ่' }}">
+            </div>
+            <div class="col-md-4 form-group">
+              <label>{{ _('เลขประจำตัวผู้เสียภาษี') }}</label>
+              <input class="form-control" name="tax_id" value="{{ company.tax_id or '' }}" maxlength="13">
+            </div>
+            <div class="col-md-4 form-group">
+              <label>{{ _('โทรศัพท์') }}</label>
+              <input class="form-control" name="phone" value="{{ company.phone or '' }}">
+            </div>
+            <div class="col-md-4 form-group">
+              <label>{{ _('อีเมล') }}</label>
+              <input class="form-control" type="email" name="email" value="{{ company.email or '' }}">
+            </div>
+            <div class="col-12 form-group">
+              <label>{{ _('ที่อยู่') }}</label>
+              <textarea class="form-control" name="address" rows="3">{{ company.address or '' }}</textarea>
+            </div>
+            <div class="col-md-9 form-group">
+              <label>{{ _('เว็บไซต์') }}</label>
+              <input class="form-control" name="website" value="{{ company.website or '' }}">
+            </div>
+            <div class="col-md-3 form-group">
+              <label>{{ _('VAT เริ่มต้น (%)') }}</label>
+              <input class="form-control" type="number" step="0.01" name="default_vat_rate" value="{{ company.default_vat_rate or 7.0 }}">
+            </div>
+            <div class="col-12 form-group">
+              <label>{{ _('ข้อมูลธนาคาร (สำหรับใบแจ้งหนี้)') }}</label>
+              <textarea class="form-control" name="bank_info" rows="3">{{ company.bank_info or '' }}</textarea>
+            </div>
+            <div class="col-12 form-group">
+              <label>{{ _('เงื่อนไขเริ่มต้น') }}</label>
+              <textarea class="form-control" name="default_terms" rows="3">{{ company.default_terms or '' }}</textarea>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <button class="btn btn-save btn-block" type="submit">
+            <i class="fas fa-save"></i> {{ _('บันทึก') }}
+          </button>
+          <div class="alert alert-info mt-3 mb-0 text-sm">
+            <strong>{{ _('ภาษาและธีม') }}:</strong><br>
+            {{ _('เปลี่ยนได้จากไอคอน') }} <i class="fas fa-globe"></i> {{ _('และ') if False else '/' }} <i class="fas fa-palette"></i> {{ _('ที่มุมบนขวา') if False else 'top-right' }}
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- ============ Tab 2: Branding (Logo + Signature) ============ -->
+  <div class="tab-pane fade" id="branding" role="tabpanel">
+    <form method="post" enctype="multipart/form-data" action="{{ url_for('settings.index') }}">
+      <input type="hidden" name="action" value="save">
+      <div class="row">
+        <!-- Logo -->
+        <div class="col-md-6">
+          <div class="card card-outline card-info">
+            <div class="card-header"><h3 class="card-title"><i class="fas fa-image mr-1"></i> {{ _('โลโก้บริษัท') }}</h3></div>
+            <div class="card-body text-center">
+              {% if company.logo_path %}
+                <img src="{{ url_for('static', filename=company.logo_path) }}"
+                     alt="logo" class="img-thumbnail bg-white mb-3"
+                     style="max-height: 140px; max-width: 100%; object-fit: contain; padding: 8px;">
+              {% else %}
+                <div class="border rounded p-4 mb-3 text-muted bg-light">
+                  <i class="fas fa-image fa-3x mb-2"></i>
+                  <div>{{ _('ยังไม่มีโลโก้') }}</div>
+                </div>
+              {% endif %}
+              <div class="form-group text-left">
+                <input type="file" class="form-control-file" name="logo" accept="image/*">
+                <small class="form-text text-muted">PNG/JPG/WEBP/SVG · ≤ 8 MB</small>
+              </div>
+              <small class="text-muted">{{ _('โลโก้จะแสดงในหัวเอกสาร PDF ทุกประเภท') }}</small>
+            </div>
+            {% if company.logo_path %}
+            <div class="card-footer text-center">
+              <button formaction="{{ url_for('settings.index') }}" type="submit"
+                      name="action" value="remove_logo"
+                      class="btn btn-sm btn-outline-danger"
+                      onclick="return confirm('{{ _('ลบโลโก้') }}?');">
+                <i class="fas fa-trash"></i> {{ _('ลบโลโก้') }}
+              </button>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Signature -->
+        <div class="col-md-6">
+          <div class="card card-outline card-success">
+            <div class="card-header"><h3 class="card-title"><i class="fas fa-signature mr-1"></i> {{ _('ลายเซ็น (ผู้มีอำนาจ)') }}</h3></div>
+            <div class="card-body text-center">
+              {% if company.signature_path %}
+                <img src="{{ url_for('static', filename=company.signature_path) }}"
+                     alt="signature" class="img-thumbnail bg-white mb-3"
+                     style="max-height: 100px; max-width: 100%; object-fit: contain; padding: 8px;">
+              {% else %}
+                <div class="border rounded p-4 mb-3 text-muted bg-light">
+                  <i class="fas fa-signature fa-3x mb-2"></i>
+                  <div>{{ _('ยังไม่มีลายเซ็น') }}</div>
+                </div>
+              {% endif %}
+              <div class="form-group text-left">
+                <input type="file" class="form-control-file" name="signature" accept="image/*">
+                <small class="form-text text-muted">PNG (transparent bg แนะนำ) · ≤ 8 MB</small>
+              </div>
+              <small class="text-muted">{{ _('ลายเซ็นจะแสดงในช่อง "ผู้ออกเอกสาร / ผู้รับเงิน" ของ PDF') if False else 'ลายเซ็นจะแสดงในช่อง "ผู้ออกเอกสาร / ผู้รับเงิน" ของ PDF' }}</small>
+            </div>
+            {% if company.signature_path %}
+            <div class="card-footer text-center">
+              <button formaction="{{ url_for('settings.index') }}" type="submit"
+                      name="action" value="remove_signature"
+                      class="btn btn-sm btn-outline-danger"
+                      onclick="return confirm('{{ _('ลบลายเซ็น') }}?');">
+                <i class="fas fa-trash"></i> {{ _('ลบลายเซ็น') }}
+              </button>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="col-12 text-center mt-2">
+          <button class="btn btn-save" type="submit">
+            <i class="fas fa-save"></i> {{ _('บันทึก') }}
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- ============ Tab 3: Backup / Restore ============ -->
+  <div class="tab-pane fade" id="backup" role="tabpanel">
+    <div class="row">
+      <div class="col-md-6">
+        <div class="card card-outline card-primary">
+          <div class="card-header"><h3 class="card-title"><i class="fas fa-download mr-1"></i> {{ _('สำรองข้อมูล') }}</h3></div>
+          <div class="card-body">
+            <p>{{ _('ดาวน์โหลดไฟล์ .zip ที่มีข้อมูลทั้งหมด (database + รูปอัปโหลด)') }}</p>
+            <ul class="text-muted small">
+              <li>thaibill.db (SQLite database)</li>
+              <li>uploads/ ({{ _('โลโก้') }} + {{ _('ลายเซ็น') }})</li>
+              <li>backup_info.json</li>
+            </ul>
+            <a href="{{ url_for('settings.backup_download') }}" class="btn btn-primary btn-block">
+              <i class="fas fa-download"></i> {{ _('ดาวน์โหลดสำรอง') }}
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="card card-outline card-warning">
+          <div class="card-header"><h3 class="card-title"><i class="fas fa-upload mr-1"></i> {{ _('กู้คืนข้อมูล') }}</h3></div>
+          <div class="card-body">
+            <div class="alert alert-warning">
+              <strong><i class="fas fa-exclamation-triangle"></i> {{ _('คำเตือน') }}:</strong>
+              {{ _('การกู้คืนจะเขียนทับข้อมูลปัจจุบันทั้งหมด') }}
+              · {{ _('แนะนำให้สำรองข้อมูลปัจจุบันก่อน') }}
+            </div>
+            <form method="post" action="{{ url_for('settings.restore_upload') }}" enctype="multipart/form-data">
+              <div class="form-group">
+                <label>{{ _('เลือกไฟล์ .zip') }}</label>
+                <input type="file" class="form-control-file" name="backup_file" accept=".zip" required>
+              </div>
+              <button type="submit" class="btn btn-warning btn-block"
+                      onclick="return confirm('{{ _('การกู้คืนจะเขียนทับข้อมูลปัจจุบันทั้งหมด') }} — {{ _('ตกลง') }}?');">
+                <i class="fas fa-upload"></i> {{ _('กู้คืน') }}
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ Tab 4: Google Drive ============ -->
+  <div class="tab-pane fade" id="gdrive" role="tabpanel">
+    <div class="row">
+      <div class="col-md-7">
+        <div class="card card-outline card-success">
+          <div class="card-header">
+            <h3 class="card-title"><i class="fab fa-google-drive mr-1"></i> {{ _('เชื่อมต่อ Google Drive') }}</h3>
+            {% if gdrive_configured %}
+            <span class="badge badge-success ml-2"><i class="fas fa-check"></i> {{ _('เชื่อมต่อสำเร็จ') }}</span>
+            {% else %}
+            <span class="badge badge-secondary ml-2">{{ _('ยังไม่ได้ตั้งค่า') }}</span>
+            {% endif %}
+          </div>
+          <div class="card-body">
+            <form method="post" action="{{ url_for('settings.gdrive_save') }}" enctype="multipart/form-data">
+              <div class="form-group">
+                <label>{{ _('รหัสโฟลเดอร์ Google Drive') }}</label>
+                <input class="form-control" name="gdrive_folder_id"
+                       value="{{ company.gdrive_folder_id or '' }}"
+                       placeholder="เช่น 1A2b3C4d5E6f7G8h9I0j...">
+                <small class="form-text text-muted">
+                  เปิด Google Drive → คลิกขวาที่โฟลเดอร์ → Share → Copy link
+                  URL จะเป็น <code>drive.google.com/drive/folders/<strong>ID-ตรงนี้</strong></code>
+                </small>
+              </div>
+              <div class="form-group">
+                <label>{{ _('อัปโหลดไฟล์ Service Account JSON') }}</label>
+                <input type="file" class="form-control-file" name="gdrive_credentials" accept=".json">
+                <small class="form-text text-muted">
+                  {% if company.gdrive_credentials_filename %}
+                  <i class="fas fa-check text-success"></i> มีไฟล์อยู่แล้ว: <code>{{ company.gdrive_credentials_filename }}</code> — อัปโหลดใหม่จะทับของเก่า
+                  {% else %}
+                  <i class="fas fa-exclamation-circle text-warning"></i> ยังไม่ได้อัปโหลด — ดูคู่มือทางขวา
+                  {% endif %}
+                </small>
+              </div>
+              <button type="submit" class="btn btn-save">
+                <i class="fas fa-save"></i> {{ _('บันทึก') }}
+              </button>
+              {% if gdrive_configured %}
+              <button type="submit" formaction="{{ url_for('settings.gdrive_test') }}" class="btn btn-info">
+                <i class="fas fa-plug"></i> {{ _('ทดสอบการเชื่อมต่อ') }}
+              </button>
+              <button type="submit" formaction="{{ url_for('settings.gdrive_upload') }}" class="btn btn-success">
+                <i class="fab fa-google-drive"></i> {{ _('อัปโหลดสำรองไปยัง Google Drive') }}
+              </button>
+              <button type="submit" formaction="{{ url_for('settings.gdrive_remove') }}" class="btn btn-outline-danger float-right"
+                      onclick="return confirm('ลบการเชื่อมต่อ?');">
+                <i class="fas fa-unlink"></i> ลบการเชื่อมต่อ
+              </button>
+              {% endif %}
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-5">
+        <div class="card card-outline card-info">
+          <div class="card-header"><h3 class="card-title">📖 วิธีตั้งค่า Service Account</h3></div>
+          <div class="card-body small">
+            <ol class="pl-3 mb-2">
+              <li>เปิด <a href="https://console.cloud.google.com" target="_blank">Google Cloud Console</a></li>
+              <li>สร้าง Project ใหม่ (หรือใช้ที่มี)</li>
+              <li>เมนู "APIs & Services" → "Library" → ค้นหา <strong>Google Drive API</strong> → กด <strong>Enable</strong></li>
+              <li>เมนู "IAM & Admin" → "Service Accounts" → <strong>Create service account</strong>
+                <ul><li>ตั้งชื่อ เช่น <code>thaibill-backup</code></li><li>กด Create → Done</li></ul></li>
+              <li>คลิกที่ Service Account ที่สร้าง → <strong>Keys</strong> → Add Key → Create new key →
+                  เลือก <strong>JSON</strong> → Create → จะดาวน์โหลด JSON file</li>
+              <li>ไปที่ Google Drive → สร้าง/เลือกโฟลเดอร์ที่จะเก็บ backup → คลิกขวา → <strong>Share</strong></li>
+              <li>วาง <strong>email ของ Service Account</strong> (จาก JSON, field <code>client_email</code>)
+                  → ตั้งสิทธิ์ <strong>Editor</strong> → Send</li>
+              <li>กลับมาที่นี่: ใส่ Folder ID + อัปโหลด JSON file → กดบันทึก → กด "ทดสอบ"</li>
+            </ol>
+            <div class="alert alert-info py-2 mb-0">
+              <i class="fas fa-shield-alt"></i> JSON key จะเก็บใน <code>instance/gdrive/</code> ของ server เท่านั้น ไม่ถูก commit
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// เปิด tab ตาม hash ใน URL (เช่น #backup #gdrive)
+document.addEventListener('DOMContentLoaded', function() {
+  if (location.hash) {
+    var tab = document.querySelector('a[href="' + location.hash + '"]');
+    if (tab) tab.click();
+  }
+});
+</script>
+{% endblock %}

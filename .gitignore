@@ -1,0 +1,74 @@
+# ===== EasyBill .gitignore =====
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual env
+venv/
+env/
+.venv/
+ENV/
+
+# Flask instance + DB
+instance/
+*.db
+*.sqlite
+*.sqlite3
+
+# Uploads + generated files
+app/static/uploads/
+uploads/
+
+# Logs
+logs/
+*.log
+
+# Backups
+backups/
+*.bak
+*.backup
+
+# Environment / secrets
+.env
+.env.local
+.env.production
+*.pem
+credentials.json
+client_secret*.json
+service-account*.json
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+
+# Node (if added later)
+node_modules/
+
+# Test artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Skip user-uploaded company assets
+app/static/uploads/logos/
+app/static/uploads/signatures/
+app/static/uploads/attachments/

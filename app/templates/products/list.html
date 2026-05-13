@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block page_title %}<i class="fas fa-cube mr-2"></i>{{ _('สินค้า / บริการ') }}{% endblock %}
+{% block topbar_actions %}
+<a class="btn btn-primary" href="{{ url_for('products.edit') }}"><i class="fas fa-plus"></i> {{ _('เพิ่มสินค้า/บริการ') }}</a>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <form method="get" class="form-inline">
+      <div class="input-group" style="min-width:300px;">
+        <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="{{ _('ค้นหา ชื่อ / รหัส') }}">
+        <div class="input-group-append"><button class="btn btn-default"><i class="fas fa-search"></i></button></div>
+      </div>
+      <span class="ml-auto text-muted">{{ _('ทั้งหมด') }} {{ products|length }} {{ _('รายการ') }}</span>
+    </form>
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-hover table-striped mb-0">
+      <thead><tr>
+        <th>{{ _('รหัส') }}</th><th>{{ _('ชื่อ') }}</th><th>{{ _('ประเภท') }}</th>
+        <th>{{ _('หน่วย') }}</th><th class="text-right">{{ _('ราคา') }}</th><th></th>
+      </tr></thead>
+      <tbody>
+        {% for p in products %}
+        <tr>
+          <td><code>{{ p.code or '-' }}</code></td>
+          <td>
+            <a href="{{ url_for('products.edit', pid=p.id) }}" class="font-weight-bold">{{ p.name }}</a>
+            {% if p.description %}<small class="text-muted d-block">{{ p.description[:80] }}{% if p.description|length > 80 %}...{% endif %}</small>{% endif %}
+          </td>
+          <td>
+            {% if p.product_type == 'service' %}<span class="badge badge-info">{{ _('บริการ') }}</span>
+            {% else %}<span class="badge badge-secondary">{{ _('สินค้า') }}</span>{% endif %}
+          </td>
+          <td>{{ p.unit }}</td>
+          <td class="text-right"><strong>{{ p.price | money }}</strong></td>
+          <td class="text-right">
+            <a class="btn btn-sm btn-default" href="{{ url_for('products.edit', pid=p.id) }}"><i class="fas fa-edit"></i></a>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" class="text-center text-muted p-5">
+          <i class="fas fa-cube fa-3x mb-3 d-block"></i>
+          <h5>{{ _('ยังไม่มีสินค้า/บริการ') }}</h5>
+          <a class="btn btn-primary mt-2" href="{{ url_for('products.edit') }}"><i class="fas fa-plus"></i> {{ _('เพิ่มรายการแรก') }}</a>
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

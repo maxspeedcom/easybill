@@ -1,0 +1,97 @@
+/* ThaiBill v2 - AdminLTE overrides */
+
+/* Sarabun font ครอบทั้งระบบ */
+html, body, input, button, select, textarea, .btn, .nav-link, .form-control,
+.card-title, .brand-text, .main-footer {
+  font-family: 'Sarabun', -apple-system, BlinkMacSystemFont, sans-serif !important;
+}
+
+/* Brand mini logo */
+.brand-link .brand-logo-mini {
+  display: inline-block;
+  width: 32px; height: 32px;
+  border-radius: 6px;
+  text-align: center; line-height: 32px;
+  font-weight: 800; font-size: 12px;
+  color: #fff;
+}
+
+/* Make tables a bit more readable for Thai */
+.table th, .table td { vertical-align: middle; }
+
+/* Document items table */
+.qt-items input { border: 1px solid transparent; background: transparent; }
+.qt-items input:focus { border-color: #007bff; background: #fff; }
+.qt-items textarea { border: 1px solid transparent; background: transparent; font-size: 12px; }
+.qt-items textarea:focus { border-color: #007bff; background: #fff; }
+
+/* Login page tweaks */
+.login-page { background: linear-gradient(135deg, #f6f8fb 0%, #e2e8f0 100%); }
+.login-logo a { color: #1e40af; font-size: 32px; }
+.login-card-body { border-radius: 6px; }
+
+/* Customer autocomplete dropdown */
+.autocomplete-dropdown,
+.autocomplete-results {
+  position: absolute; left: 0; right: 0; top: 100%; z-index: 1050;
+  background: #fff; border: 1px solid #ced4da;
+  border-top: none; border-radius: 0 0 4px 4px;
+  max-height: 280px; overflow-y: auto;
+  box-shadow: 0 4px 12px rgba(0,0,0,.15);
+}
+.autocomplete-item { padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #f1f3f5; }
+.autocomplete-item:last-child { border-bottom: none; }
+.autocomplete-item:hover, .autocomplete-item.active { background: #e7f1ff; }
+.autocomplete-item .name,
+.autocomplete-item > div:first-child { font-weight: 600; color: #1f2937; }
+.autocomplete-item .meta,
+.autocomplete-item .sub { font-size: 11px; color: #6b7280; margin-top: 2px; }
+.ac-wrap { position: relative; }
+/* Dark mode override */
+body.dark-mode .autocomplete-results,
+body.dark-mode .autocomplete-dropdown {
+  background: #343a40; border-color: #4b545c; color: #c2c7d0;
+}
+body.dark-mode .autocomplete-item .name,
+body.dark-mode .autocomplete-item > div:first-child { color: #f8f9fa; }
+body.dark-mode .autocomplete-item:hover,
+body.dark-mode .autocomplete-item.active { background: #495057; }
+
+/* Print friendly text-sm */
+.text-sm { font-size: 13px; }
+
+/* Save button — green เด่นชัดทุกธีม */
+.btn-save,
+button.btn-save,
+.btn-save:focus,
+.btn-save:active {
+  background-color: #28a745 !important;
+  background-image: linear-gradient(135deg, #28a745, #1e7e34) !important;
+  border-color: #1e7e34 !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  font-size: 16px !important;
+  padding: 12px 20px !important;
+  box-shadow: 0 4px 10px rgba(40,167,69,0.4) !important;
+  text-shadow: 0 1px 1px rgba(0,0,0,0.15) !important;
+  border-radius: 6px !important;
+  transition: transform 0.1s, box-shadow 0.2s;
+}
+.btn-save:hover {
+  background-color: #218838 !important;
+  background-image: linear-gradient(135deg, #218838, #155724) !important;
+  box-shadow: 0 6px 14px rgba(40,167,69,0.55) !important;
+  transform: translateY(-1px);
+  color: #fff !important;
+}
+.btn-save i { margin-right: 6px; }
+body.dark-mode .btn-save {
+  background-image: linear-gradient(135deg, #2ea44f, #1a7f37) !important;
+  box-shadow: 0 4px 12px rgba(46,164,79,0.6) !important;
+}
+
+/* Make small-box numbers a bit smaller for Thai */
+.small-box h3 { font-size: 1.6rem; }
+
+/* Card title */
+.card-title { font-weight: 600; }

@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+{% block page_title %}{{ _('แดชบอร์ด') }}{% endblock %}
+{% block topbar_actions %}
+<a class="btn btn-primary" href="{{ url_for('documents.edit', doc_type='QT') }}">
+  <i class="fas fa-plus"></i> {{ _('สร้างใบเสนอราคา') }}
+</a>
+{% endblock %}
+
+{% block content %}
+{% set currency_label = 'บาท' if get_lang() == 'th' else 'baht' %}
+<div class="row">
+  <div class="col-lg-3 col-6">
+    <div class="small-box bg-primary">
+      <div class="inner">
+        <h3>{{ '{:,.0f}'.format(month_totals.QT) }} <small style="font-size:60%; font-weight:500; opacity:0.9;">{{ currency_label }}</small></h3>
+        <p>{{ _('ใบเสนอราคา (เดือนนี้)') }}</p>
+      </div>
+      <div class="icon"><i class="fas fa-file-invoice"></i></div>
+      <a href="{{ url_for('documents.index', doc_type='QT') }}" class="small-box-footer">
+        {{ _('ดูทั้งหมด') }} ({{ counts.QT }}) <i class="fas fa-arrow-circle-right"></i>
+      </a>
+    </div>
+  </div>
+  <div class="col-lg-3 col-6">
+    <div class="small-box bg-warning">
+      <div class="inner">
+        <h3>{{ '{:,.0f}'.format(iv_unpaid_total) }} <small style="font-size:60%; font-weight:500; opacity:0.9;">{{ currency_label }}</small></h3>
+        <p>{{ _('ยอดค้างชำระ') }}</p>
+      </div>
+      <div class="icon"><i class="fas fa-file-invoice-dollar"></i></div>
+      <a href="{{ url_for('documents.index', doc_type='IV') }}" class="small-box-footer">
+        {{ _('ดูใบแจ้งหนี้') }} ({{ counts.IV }}) <i class="fas fa-arrow-circle-right"></i>
+      </a>
+    </div>
+  </div>
+  <div class="col-lg-3 col-6">
+    <div class="small-box bg-success">
+      <div class="inner">
+        <h3>{{ '{:,.0f}'.format(rc_month_total) }} <small style="font-size:60%; font-weight:500; opacity:0.9;">{{ currency_label }}</small></h3>
+        <p>{{ _('รับชำระเดือนนี้') }}</p>
+      </div>
+      <div class="icon"><i class="fas fa-money-bill-wave"></i></div>
+      <a href="{{ url_for('documents.index', doc_type='RC') }}" class="small-box-footer">
+        {{ _('ดูใบเสร็จ') }} ({{ counts.RC }}) <i class="fas fa-arrow-circle-right"></i>
+      </a>
+    </div>
+  </div>
+  <div class="col-lg-3 col-6">
+    <div class="small-box bg-info">
+      <div class="inner">
+        <h3>{{ qt_pending }}</h3>
+        <p>{{ _('ใบเสนอราคารอติดตาม') }}</p>
+      </div>
+      <div class="icon"><i class="fas fa-clock"></i></div>
+      <a href="{{ url_for('documents.index', doc_type='QT', status='sent') }}" class="small-box-footer">
+        {{ _('รายละเอียด') }} <i class="fas fa-arrow-circle-right"></i>
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-header"><h3 class="card-title"><i class="fas fa-chart-bar mr-1"></i> {{ _('ใบแจ้งหนี้ 14 วันล่าสุด') }} <small class="text-muted">({{ currency_label }})</small></h3></div>
+      <div class="card-body"><canvas id="chart" height="80"></canvas></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h3 class="card-title"><i class="fas fa-history mr-1"></i> {{ _('เอกสารล่าสุด') }}</h3></div>
+      <div class="card-body p-0">
+        <table class="table table-hover">
+          <thead><tr>
+            <th>{{ _('ประเภท') }}</th><th>{{ _('เลขที่') }}</th><th>{{ _('ลูกค้า') }}</th>
+            <th>{{ _('วันที่') }}</th><th class="text-right">{{ _('ยอด') }}</th><th>{{ _('สถานะ') }}</th>
+          </tr></thead>
+          <tbody>
+            {% for d in recent %}
+            {% set ti = d.type_info() %}
+            {% set lbl, color = d.status_label() %}
+            <tr style="cursor:pointer;" onclick="location.href='{{ url_for('documents.view', doc_type=d.doc_type, doc_id=d.id) }}'">
+              <td><span class="badge badge-{{ ti.color }}"><i class="fas {{ ti.icon }} mr-1"></i>{{ _(ti.name) }}</span></td>
+              <td><code>{{ d.number }}</code></td>
+              <td>{{ d.customer_snapshot_name or '-' }}</td>
+              <td>{{ d.issue_date | thaidate(short=True) }}</td>
+              <td class="text-right">
+                {{ d.grand_total | money }}
+                <small class="text-muted">{% if d.currency and d.currency != 'THB' %}{{ d.currency }}{% else %}{{ currency_label }}{% endif %}</small>
+              </td>
+              <td><span class="badge badge-{{ color }}">{{ _(lbl) }}</span></td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" class="text-center text-muted p-4">{{ _('ยังไม่มีเอกสาร') }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card card-outline card-secondary">
+      <div class="card-header"><h3 class="card-title">{{ _('สรุปจำนวนเอกสาร') }}</h3></div>
+      <div class="card-body p-2">
+        {% for dt, info in doc_types.items() %}
+        <a href="{{ url_for('documents.index', doc_type=dt) }}"
+           class="d-flex justify-content-between align-items-center p-2 border-bottom text-dark">
+          <span><i class="fas {{ info.icon }} text-{{ info.color }} mr-2"></i>{{ _(info.name) }}</span>
+          <span class="badge badge-light">{{ counts[dt] }}</span>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="card card-outline card-primary">
+      <div class="card-header"><h3 class="card-title">{{ _('ลิงก์ลัด') }}</h3></div>
+      <div class="card-body p-2">
+        <a class="btn btn-default btn-block text-left" href="{{ url_for('documents.edit', doc_type='QT') }}">
+          <i class="fas fa-plus text-primary mr-1"></i> {{ _('สร้างใบเสนอราคา') }}
+        </a>
+        <a class="btn btn-default btn-block text-left" href="{{ url_for('documents.edit', doc_type='IV') }}">
+          <i class="fas fa-plus text-warning mr-1"></i> {{ _('สร้างใบแจ้งหนี้') }}
+        </a>
+        <a class="btn btn-default btn-block text-left" href="{{ url_for('customers.edit') }}">
+          <i class="fas fa-user-plus text-info mr-1"></i> {{ _('เพิ่มลูกค้า') }}
+        </a>
+        <a class="btn btn-default btn-block text-left" href="{{ url_for('products.edit') }}">
+          <i class="fas fa-box mr-1"></i> {{ _('เพิ่มสินค้า / บริการ') }}
+        </a>
+      </div>
+    </div>
+
+    <div class="card card-outline card-info">
+      <div class="card-header"><h3 class="card-title">{{ _('ฐานข้อมูล') }}</h3></div>
+      <div class="card-body p-2">
+        <div class="d-flex justify-content-between p-2 border-bottom">
+          <span><i class="fas fa-users mr-2"></i> {{ _('ลูกค้า') }}</span><strong>{{ total_customers }}</strong>
+        </div>
+        <div class="d-flex justify-content-between p-2">
+          <span><i class="fas fa-cube mr-2"></i> {{ _('สินค้า/บริการ') }}</span><strong>{{ total_products }}</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+new Chart(document.getElementById('chart'), {
+  type: 'bar',
+  data: {
+    labels: {{ chart_labels | tojson }},
+    datasets: [{
+      label: '{{ _("ใบแจ้งหนี้") }}',
+      data: {{ chart_values | tojson }},
+      backgroundColor: 'rgba(60, 141, 188, 0.85)',
+      borderRadius: 4, maxBarThickness: 36,
+    }]
+  },
+  options: { responsive: true, plugins: { legend: { display: false } },
+    scales: { y: { ticks: { callback: v => v.toLocaleString() } }, x: { grid: { display: false } } } }
+});
+</script>
+{% endblock %}

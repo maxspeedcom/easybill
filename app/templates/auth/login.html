@@ -1,0 +1,371 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('เข้าสู่ระบบ') }}{% endblock %}
+
+{% block head %}
+<style>
+  /* Override body for login layout */
+  body.login-page {
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    background: radial-gradient(ellipse at center, #1e1b4b 0%, #0f172a 60%, #020617 100%);
+    background-attachment: fixed;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* === Bokeh lights — แสงนุ่มลอย พองยุบ === */
+  .bokeh {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(28px);
+    pointer-events: none;
+    will-change: transform, opacity;
+    animation: bokehPulse var(--dur, 5s) ease-in-out infinite;
+    animation-delay: var(--delay, 0s);
+    z-index: 0;
+  }
+  @keyframes bokehPulse {
+    0%, 100% { transform: translate3d(0, 0, 0) scale(1);   opacity: 0.45; }
+    50%      { transform: translate3d(var(--mx, 30px), var(--my, -25px), 0) scale(1.35); opacity: 0.95; }
+  }
+
+  /* Tiny sparkle dots */
+  .sparkle {
+    position: fixed;
+    width: 2px; height: 2px;
+    background: #fff;
+    border-radius: 50%;
+    pointer-events: none;
+    box-shadow: 0 0 6px #fff;
+    animation: sparkleFade var(--sdur, 3s) ease-in-out infinite;
+    animation-delay: var(--sdelay, 0s);
+    z-index: 1;
+  }
+  @keyframes sparkleFade {
+    0%, 100% { opacity: 0;   transform: scale(0.5); }
+    50%      { opacity: 0.9; transform: scale(1.5); }
+  }
+
+  /* Top-right lang switcher */
+  .lang-switch {
+    position: absolute; top: 18px; right: 24px;
+    color: #cbd5e1; font-size: 13px; z-index: 10;
+  }
+  .lang-switch button {
+    background: none; border: none; color: #fff;
+    text-decoration: underline; cursor: pointer; padding: 0 4px;
+    font-size: 13px;
+  }
+  .lang-switch button.active { font-weight: 700; }
+
+  /* Login card */
+  .login-card {
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 25px 70px rgba(0,0,0,0.25), 0 8px 20px rgba(0,0,0,0.1);
+    padding: 36px 40px;
+    width: 100%;
+    max-width: 460px;
+    position: relative;
+    z-index: 2;
+    margin: 30px 16px;
+  }
+
+  .login-header { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }
+  .login-header .brand-icon { flex: 0 0 64px; }
+  .login-header .brand-icon img { width: 64px; height: 64px; }
+  .login-header h1 {
+    margin: 0; font-size: 22px; font-weight: 700; color: #1e293b;
+    line-height: 1.2;
+  }
+  .login-header h1 .v { font-size: 12px; color: #94a3b8; font-weight: 500; }
+  .login-header .sub {
+    margin-top: 4px; font-size: 13px; color: #64748b;
+  }
+  .login-header .sub a { color: #6366f1; font-weight: 600; }
+
+  .form-field { margin-bottom: 14px; }
+  .form-field label {
+    display: block; font-size: 12px; color: #64748b;
+    margin-bottom: 4px; font-weight: 500;
+  }
+  .form-field .input-wrap {
+    position: relative; background: #f1f5f9;
+    border: 2px solid transparent; border-radius: 10px;
+    padding: 10px 14px; transition: all .15s;
+  }
+  .form-field .input-wrap:focus-within {
+    background: #fff; border-color: #6366f1;
+    box-shadow: 0 0 0 4px rgba(99,102,241,0.12);
+  }
+  .form-field input {
+    width: 100%; background: transparent; border: none; outline: none;
+    font-size: 15px; color: #0f172a; padding: 0;
+  }
+  .form-field .toggle-pw {
+    position: absolute; top: 50%; right: 14px;
+    transform: translateY(-50%);
+    background: none; border: none; color: #6366f1;
+    font-size: 12px; cursor: pointer; font-weight: 600;
+    padding: 4px 8px;
+  }
+  .form-field .toggle-pw:hover { color: #4f46e5; }
+
+  .checkbox-row {
+    display: flex; justify-content: space-between; align-items: center;
+    margin: 14px 0 22px 0; font-size: 13px;
+  }
+  .checkbox-row label { display: flex; align-items: center; gap: 8px; cursor: pointer; color: #334155; margin: 0; }
+  .checkbox-row input[type="checkbox"] {
+    width: 18px; height: 18px; accent-color: #6366f1; cursor: pointer;
+  }
+  .checkbox-row a.forgot { color: #6366f1; text-decoration: none; font-weight: 600; }
+  .checkbox-row a.forgot:hover { text-decoration: underline; }
+
+  .btn-login {
+    display: block; width: 100%;
+    padding: 13px;
+    border: none; border-radius: 999px;
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 50%, #4338ca 100%);
+    color: #fff; font-size: 15px; font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 6px 16px rgba(99,102,241,0.4);
+    transition: transform .1s, box-shadow .2s;
+  }
+  .btn-login:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 24px rgba(99,102,241,0.55);
+    color: #fff;
+  }
+
+  /* Divider */
+  .divider {
+    display: flex; align-items: center;
+    margin: 22px 0 16px 0; color: #94a3b8; font-size: 12px;
+  }
+  .divider::before, .divider::after {
+    content: ''; flex: 1; height: 1px; background: #e2e8f0;
+  }
+  .divider span { padding: 0 12px; }
+
+  /* OAuth buttons */
+  .oauth-row { display: flex; gap: 10px; }
+  .btn-oauth {
+    flex: 1;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 10px 12px;
+    border: 1.5px solid #e2e8f0; border-radius: 8px;
+    background: #fff; color: #334155;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    text-decoration: none;
+    transition: all .15s;
+  }
+  .btn-oauth:hover {
+    border-color: #cbd5e1; background: #f8fafc; color: #1e293b;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    text-decoration: none;
+  }
+  .btn-oauth svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+  /* Footer */
+  .login-footer {
+    text-align: center; color: #cbd5e1;
+    font-size: 11px; margin-top: 26px; position: relative; z-index: 2;
+  }
+  .login-footer strong { color: #fff; }
+
+  /* Flash messages */
+  .login-flash {
+    margin-bottom: 14px; padding: 10px 14px; border-radius: 8px;
+    font-size: 13px; border-left: 4px solid;
+  }
+  .login-flash.success { background: #f0fdf4; color: #166534; border-color: #22c55e; }
+  .login-flash.danger  { background: #fef2f2; color: #991b1b; border-color: #ef4444; }
+  .login-flash.warning { background: #fffbeb; color: #92400e; border-color: #f59e0b; }
+  .login-flash.info    { background: #eff6ff; color: #1e40af; border-color: #3b82f6; }
+</style>
+{% endblock %}
+
+{% block guest %}
+<!-- Language switcher top-right -->
+<div class="lang-switch">
+  {{ _('See this page in English') if get_lang() == 'th' else 'ดูหน้านี้เป็นภาษาไทย' }}:
+  <form method="post" action="{{ url_for('settings.preferences') }}" style="display:inline;">
+    <input type="hidden" name="theme" value="default">
+    {% if get_lang() == 'th' %}
+      <button type="submit" name="lang" value="en">English</button>
+    {% else %}
+      <button type="submit" name="lang" value="th">ภาษาไทย</button>
+    {% endif %}
+  </form>
+</div>
+
+<!-- Bokeh light spots + sparkles (spawn by JS) -->
+<div id="bokeh-bg" aria-hidden="true"></div>
+
+<div class="login-card">
+  <!-- Brand -->
+  <div class="login-header">
+    <div class="brand-icon">
+      <img src="{{ url_for('static', filename='img/logo-mark.svg') }}" alt="EasyBill">
+    </div>
+    <div>
+      <h1>{{ _('เข้าสู่ระบบ') }} EasyBill <span class="v">v2.0</span></h1>
+      <div class="sub">
+        {{ _('บัญชีเริ่มต้น') }}:
+        <a href="javascript:void(0)" onclick="document.getElementById('username').value='admin';document.getElementById('password').value='admin1234';">
+          admin / admin1234
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Flash -->
+  {% with msgs = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in msgs %}
+    {% set ac = {'success':'success','danger':'danger','warning':'warning','info':'info'}.get(cat, 'info') %}
+    <div class="login-flash {{ ac }}">{{ msg }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <!-- Form -->
+  <form method="post">
+    <div class="form-field">
+      <label for="username">{{ _('ชื่อผู้ใช้') }} / Email</label>
+      <div class="input-wrap">
+        <input type="text" id="username" name="username" required autofocus
+               value="admin" autocomplete="username">
+      </div>
+    </div>
+
+    <div class="form-field">
+      <label for="password">{{ _('รหัสผ่าน') }}</label>
+      <div class="input-wrap">
+        <input type="password" id="password" name="password" required
+               autocomplete="current-password">
+        <button type="button" class="toggle-pw" id="toggle-pw"
+                onclick="togglePassword()">
+          <i class="fas fa-eye"></i> <span id="pw-label">{{ _('แสดงรหัสผ่าน') }}</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="checkbox-row">
+      <label>
+        <input type="checkbox" name="remember" id="remember" checked>
+        <span>{{ _('จดจำการเข้าระบบ') }}</span>
+      </label>
+      <a href="#" class="forgot" onclick="alert('โปรดติดต่อผู้ดูแลระบบเพื่อรีเซ็ตรหัสผ่าน'); return false;">
+        {{ _('ลืมรหัสผ่าน?') if get_lang() == 'th' else 'Forgot password?' }}
+      </a>
+    </div>
+
+    <button type="submit" class="btn-login">
+      {{ _('เข้าสู่ระบบ') }} EasyBill
+    </button>
+  </form>
+
+  <!-- OAuth divider -->
+  {% if google_enabled or ms_enabled %}
+  <div class="divider"><span>{{ _('หรือเข้าสู่ระบบด้วย') if get_lang() == 'th' else 'or sign in with' }}</span></div>
+
+  <!-- OAuth buttons -->
+  <div class="oauth-row">
+    {% if google_enabled %}
+    <a href="{{ url_for('auth.oauth_login', provider='google') }}" class="btn-oauth">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+      </svg>
+      Google
+    </a>
+    {% endif %}
+    {% if ms_enabled %}
+    <a href="{{ url_for('auth.oauth_login', provider='microsoft') }}" class="btn-oauth">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <rect x="1" y="1" width="10" height="10" fill="#F25022"/>
+        <rect x="13" y="1" width="10" height="10" fill="#7FBA00"/>
+        <rect x="1" y="13" width="10" height="10" fill="#00A4EF"/>
+        <rect x="13" y="13" width="10" height="10" fill="#FFB900"/>
+      </svg>
+      Microsoft
+    </a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+
+<div class="login-footer">
+  EasyBill v2.0 · พัฒนาโดย <strong>แม่สรวยซิสเต็ม</strong>
+  : <a href="https://www.maesuaisystem.com" target="_blank" rel="noopener"
+       style="color: #93c5fd; text-decoration: none; font-weight: 600;">www.maesuaisystem.com</a>
+</div>
+
+<script>
+function togglePassword() {
+  const input = document.getElementById('password');
+  const lbl = document.getElementById('pw-label');
+  const icon = document.querySelector('#toggle-pw i');
+  if (input.type === 'password') {
+    input.type = 'text';
+    lbl.textContent = '{{ _("ซ่อนรหัสผ่าน") if get_lang() == "th" else "Hide password" }}';
+    icon.className = 'fas fa-eye-slash';
+  } else {
+    input.type = 'password';
+    lbl.textContent = '{{ _("แสดงรหัสผ่าน") if get_lang() == "th" else "Show password" }}';
+    icon.className = 'fas fa-eye';
+  }
+}
+
+// === Spawn bokeh lights + sparkles ===
+(function() {
+  const container = document.getElementById('bokeh-bg');
+  if (!container) return;
+
+  // สีโบเก้นุ่ม ๆ - หลายโทน
+  const colors = [
+    'rgba(244,114,182,0.75)',  // ชมพู
+    'rgba(96,165,250,0.70)',   // ฟ้า
+    'rgba(167,139,250,0.75)',  // ม่วงอ่อน
+    'rgba(52,211,153,0.65)',   // เขียวมิ้นต์
+    'rgba(251,191,36,0.55)',   // เหลืองทอง
+    'rgba(34,211,238,0.70)',   // ฟ้าครามใส
+    'rgba(236,72,153,0.65)',   // ชมพูแรง
+    'rgba(129,140,248,0.75)',  // ม่วงน้ำเงิน
+  ];
+
+  // โบเก้ 14 ดวง ขนาดต่างกัน
+  for (let i = 0; i < 14; i++) {
+    const b = document.createElement('div');
+    b.className = 'bokeh';
+    const size = 80 + Math.random() * 220;          // 80-300px
+    b.style.width = b.style.height = size + 'px';
+    b.style.background = colors[Math.floor(Math.random() * colors.length)];
+    b.style.left = (Math.random() * 100) + '%';
+    b.style.top  = (Math.random() * 100) + '%';
+    b.style.setProperty('--dur',   (4 + Math.random() * 6) + 's');
+    b.style.setProperty('--delay', (-Math.random() * 8) + 's');
+    b.style.setProperty('--mx',    ((Math.random() - 0.5) * 120) + 'px');
+    b.style.setProperty('--my',    ((Math.random() - 0.5) * 120) + 'px');
+    container.appendChild(b);
+  }
+
+  // เพิ่มประกายเล็ก ๆ 25 จุด
+  for (let i = 0; i < 25; i++) {
+    const s = document.createElement('div');
+    s.className = 'sparkle';
+    s.style.left = (Math.random() * 100) + '%';
+    s.style.top  = (Math.random() * 100) + '%';
+    s.style.setProperty('--sdur',   (2 + Math.random() * 3) + 's');
+    s.style.setProperty('--sdelay', (-Math.random() * 4) + 's');
+    container.appendChild(s);
+  }
+})();
+</script>
+{% endblock %}

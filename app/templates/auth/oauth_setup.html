@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+{% block title %}ตั้งค่า OAuth — {{ provider_name }}{% endblock %}
+
+{% block head %}
+<style>
+body.login-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #1e3a8a 100%);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0; padding: 30px 16px;
+}
+.setup-card {
+  background: #fff; border-radius: 14px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  padding: 36px 40px; max-width: 600px; width: 100%;
+}
+.setup-card h1 { color: #1e293b; font-size: 22px; margin: 0 0 8px 0; }
+.setup-card .sub { color: #64748b; margin-bottom: 22px; }
+.setup-card ol { padding-left: 20px; line-height: 1.7; }
+.setup-card code {
+  background: #f1f5f9; padding: 2px 6px; border-radius: 4px;
+  font-size: 12px; color: #6366f1;
+}
+.setup-card .env-block {
+  background: #0f172a; color: #93c5fd; padding: 14px 16px;
+  border-radius: 8px; font-family: monospace; font-size: 12px;
+  white-space: pre; overflow-x: auto; margin: 12px 0;
+}
+.setup-card .actions { margin-top: 22px; display: flex; gap: 10px; }
+.btn-back {
+  background: #f1f5f9; color: #475569; padding: 10px 18px;
+  border-radius: 8px; text-decoration: none; font-weight: 600;
+}
+.btn-back:hover { background: #e2e8f0; color: #1e293b; text-decoration: none; }
+.warning-box {
+  background: #fef3c7; border-left: 4px solid #f59e0b;
+  padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  font-size: 13px; color: #92400e;
+}
+</style>
+{% endblock %}
+
+{% block guest %}
+<div class="setup-card">
+  <h1>🔧 ตั้งค่า Sign in with {{ provider_name }}</h1>
+  <p class="sub">
+    ฟีเจอร์ Sign in with {{ provider_name }} ยังไม่ได้เปิดใช้งาน
+    — ต้องตั้งค่า OAuth Client ก่อน
+  </p>
+
+  <div class="warning-box">
+    ⚠️ <strong>ข้อจำกัด:</strong> OAuth ต้องการ <strong>HTTPS</strong>
+    (ยกเว้น <code>http://localhost</code>) ถ้าระบบรันที่
+    <code>http://10.7.219.147</code> ตรงๆ จะใช้ไม่ได้ — ต้องตั้ง reverse proxy + SSL cert
+    หรือใช้บริการ tunnel (เช่น Cloudflare Tunnel)
+  </div>
+
+  <h3 style="font-size:16px; color:#1e293b; margin-top:18px;">วิธีตั้งค่า:</h3>
+
+  {% if provider == 'google' %}
+  <ol>
+    <li>เปิด <a href="https://console.cloud.google.com/apis/credentials" target="_blank">Google Cloud Console — Credentials</a></li>
+    <li>สร้าง <strong>OAuth 2.0 Client ID</strong>
+      <ul>
+        <li>Application type: <code>Web application</code></li>
+        <li>Authorized redirect URIs: <code>https://your-domain/login/google/callback</code></li>
+      </ul>
+    </li>
+    <li>คัดลอก <strong>Client ID</strong> และ <strong>Client Secret</strong></li>
+    <li>เพิ่มลง <code>/opt/thaibill/.env</code>:
+      <div class="env-block">GOOGLE_CLIENT_ID=xxxxx.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=GOCSPX-xxxxxxx</div>
+    </li>
+    <li>Restart service: <code>sudo systemctl restart thaibill</code></li>
+  </ol>
+  {% else %}
+  <ol>
+    <li>เปิด <a href="https://portal.azure.com/#blade/Microsoft_AAD_RegisteredApps/ApplicationsListBlade" target="_blank">Azure Portal — App registrations</a></li>
+    <li>สร้าง <strong>New registration</strong>
+      <ul>
+        <li>Supported account types: <code>Accounts in any organizational directory and personal Microsoft accounts</code></li>
+        <li>Redirect URI: <code>Web</code> → <code>https://your-domain/login/microsoft/callback</code></li>
+      </ul>
+    </li>
+    <li>ไป <strong>Certificates &amp; secrets</strong> → <strong>New client secret</strong></li>
+    <li>คัดลอก <strong>Application (client) ID</strong> และ <strong>Client secret Value</strong></li>
+    <li>เพิ่มลง <code>/opt/thaibill/.env</code>:
+      <div class="env-block">MS_CLIENT_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+MS_CLIENT_SECRET=xxxxxxxxxxx
+MS_TENANT=common</div>
+    </li>
+    <li>Restart service: <code>sudo systemctl restart thaibill</code></li>
+  </ol>
+  {% endif %}
+
+  <div class="warning-box" style="background:#dbeafe; color:#1e3a8a; border-color:#3b82f6;">
+    💡 <strong>หมายเหตุ:</strong> หลังตั้งค่า OAuth — ผู้ใช้ที่ login ด้วย Google/Microsoft
+    ต้องมีบัญชีที่ <strong>username หรือ email ตรงกับอีเมลของ provider</strong> อยู่ในระบบก่อน
+    (ระบบไม่สร้างบัญชีอัตโนมัติ — admin ต้องเพิ่มผู้ใช้ก่อน)
+  </div>
+
+  <div class="actions">
+    <a href="{{ url_for('auth.login') }}" class="btn-back">← กลับหน้า Login</a>
+  </div>
+</div>
+{% endblock %}

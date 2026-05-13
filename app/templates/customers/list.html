@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block page_title %}<i class="fas fa-users mr-2"></i>{{ _('ลูกค้า') }}{% endblock %}
+{% block topbar_actions %}
+<a class="btn btn-primary" href="{{ url_for('customers.edit') }}"><i class="fas fa-user-plus"></i> {{ _('เพิ่มลูกค้า') }}</a>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <form method="get" class="form-inline">
+      <div class="input-group" style="min-width:300px;">
+        <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="{{ _('ค้นหา ชื่อ / รหัส / เลขผู้เสียภาษี') }}">
+        <div class="input-group-append"><button class="btn btn-default"><i class="fas fa-search"></i></button></div>
+      </div>
+      <span class="ml-auto text-muted">{{ _('ทั้งหมด') }} {{ customers|length }} {{ _('ราย') }}</span>
+    </form>
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-hover table-striped mb-0">
+      <thead><tr>
+        <th>{{ _('รหัส') }}</th><th>{{ _('ชื่อลูกค้า') }}</th><th>{{ _('เลขผู้เสียภาษี') }}</th>
+        <th>{{ _('ติดต่อ') }}</th><th>{{ _('โทรศัพท์') }}</th><th></th>
+      </tr></thead>
+      <tbody>
+        {% for c in customers %}
+        <tr>
+          <td><code>{{ c.code or '-' }}</code></td>
+          <td>
+            <a href="{{ url_for('customers.edit', cid=c.id) }}" class="font-weight-bold">{{ c.name }}</a>
+            {% if c.branch %}<small class="text-muted d-block">{{ c.branch }}</small>{% endif %}
+          </td>
+          <td><code>{{ c.tax_id or '-' }}</code></td>
+          <td>{{ c.contact_person or '-' }}</td>
+          <td>{{ c.phone or '-' }}</td>
+          <td class="text-right">
+            <a class="btn btn-sm btn-default" href="{{ url_for('customers.edit', cid=c.id) }}"><i class="fas fa-edit"></i></a>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" class="text-center text-muted p-5">
+          <i class="fas fa-users fa-3x mb-3 d-block"></i>
+          <h5>{{ _('ยังไม่มีลูกค้า') }}</h5>
+          <a class="btn btn-primary mt-2" href="{{ url_for('customers.edit') }}"><i class="fas fa-plus"></i> {{ _('เพิ่มลูกค้ารายแรก') }}</a>
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

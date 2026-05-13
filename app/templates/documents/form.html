@@ -1,0 +1,851 @@
+{% extends 'base.html' %}
+{% block page_title %}
+  {% if doc.id %}แก้ไข{{ type_info.name }} {{ doc.number }}
+  {% else %}สร้าง{{ type_info.name }}ใหม่{% endif %}
+{% endblock %}
+
+{% block content %}
+
+<style>
+/* ===== PEAK-style form layout ===== */
+.workflow-tabs {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  margin: 12px 0 20px 0; flex-wrap: wrap;
+}
+.workflow-tab {
+  position: relative;
+  border: 2px solid #e2e8f0; border-radius: 10px;
+  padding: 10px 18px; min-width: 150px;
+  background: #fff; text-align: left;
+  text-decoration: none; transition: all .15s;
+}
+.workflow-tab:hover { border-color: #6366f1; text-decoration: none; }
+.workflow-tab .lbl { font-weight: 700; color: #1e293b; font-size: 14px; display: block; }
+.workflow-tab .sub { font-size: 11px; color: #94a3b8; }
+.workflow-tab .dot {
+  display: inline-block; width: 10px; height: 10px; border-radius: 50%;
+  background: #cbd5e1; margin-right: 6px;
+}
+.workflow-tab.current { border-color: #f97316; }
+.workflow-tab.current .dot { background: #f97316; box-shadow: 0 0 0 3px rgba(249,115,22,0.2); }
+.workflow-tab.done { border-color: #10b981; background: #f0fdf4; }
+.workflow-tab.done .dot { background: #10b981; }
+.workflow-arrow { color: #cbd5e1; font-size: 12px; letter-spacing: 4px; }
+
+.form-tabs {
+  display: flex; border-bottom: 2px solid #e2e8f0; margin-bottom: 20px;
+}
+.form-tab {
+  padding: 10px 22px; border: none; background: none;
+  font-size: 14px; color: #64748b; cursor: pointer;
+  border-bottom: 3px solid transparent; margin-bottom: -2px;
+  text-decoration: none;
+}
+.form-tab.active { color: #6366f1; border-bottom-color: #6366f1; font-weight: 600; }
+.form-tab:hover { color: #6366f1; text-decoration: none; }
+
+.section-card {
+  background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
+  padding: 18px 22px; margin-bottom: 14px;
+}
+.section-head {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 15px; font-weight: 700; color: #1e293b;
+  margin-bottom: 14px;
+}
+.section-bullet {
+  width: 24px; height: 24px; border-radius: 50%;
+  background: #cbd5e1; color: #fff;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 12px; flex-shrink: 0;
+}
+.section-bullet.done { background: #10b981; }
+
+.sticky-actions {
+  position: sticky; bottom: 0; left: 0; right: 0;
+  background: #fff; border-top: 1px solid #e2e8f0;
+  padding: 12px 20px; z-index: 100;
+  display: flex; align-items: center; gap: 10px;
+  margin: 20px -16px -16px -16px;
+  box-shadow: 0 -4px 12px rgba(0,0,0,0.05);
+}
+.sticky-actions .info {
+  color: #64748b; font-size: 13px; margin-right: auto;
+}
+.sticky-actions .info code { font-size: 13px; color: #1e293b; }
+.btn-action {
+  padding: 10px 22px; border: none; border-radius: 999px;
+  font-weight: 700; font-size: 14px; cursor: pointer;
+  text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
+}
+.btn-action.cancel  { background: #fff; border: 1.5px solid #cbd5e1; color: #475569; }
+.btn-action.save    { background: linear-gradient(135deg,#06b6d4,#0891b2); color: #fff; }
+.btn-action.approve { background: linear-gradient(135deg,#8b5cf6,#6366f1); color: #fff; }
+.btn-action:hover { transform: translateY(-1px); text-decoration: none; }
+</style>
+
+<!-- Workflow tabs (QT → IV → RC → TI) -->
+<div class="workflow-tabs">
+  {% for code, info in [('QT', {'name':'ใบเสนอราคา','sub':'QT'}),
+                         ('IV', {'name':'ใบแจ้งหนี้','sub':'IV'}),
+                         ('RC', {'name':'ใบเสร็จรับเงิน','sub':'RC'}),
+                         ('TI', {'name':'ใบกำกับภาษี','sub':'TI'})] %}
+  <div class="workflow-tab {% if code == doc_type %}current{% endif %}">
+    <span class="dot"></span>
+    <span class="lbl">{{ info.name }}</span>
+    <span class="sub">{{ info.sub }}</span>
+  </div>
+  {% if not loop.last %}<span class="workflow-arrow">⋯⋯</span>{% endif %}
+  {% endfor %}
+</div>
+
+<!-- Tabs: ข้อมูลเอกสาร / ข้อมูลประวัติ -->
+<div class="form-tabs">
+  <button type="button" class="form-tab active" onclick="showFormTab('doc')">ข้อมูลเอกสาร</button>
+  <button type="button" class="form-tab" onclick="showFormTab('history')">ข้อมูลประวัติ</button>
+  <button type="button" class="btn btn-default ml-auto mb-2" data-toggle="modal" data-target="#displaySettingsModal" title="ตั้งค่าการแสดงผล" style="border:1.5px solid #06b6d4; color:#06b6d4; border-radius:999px;">
+    <i class="fas fa-sliders-h"></i> ตั้งค่าการแสดงผล
+  </button>
+</div>
+
+<!-- Tab content: ข้อมูลเอกสาร -->
+<div id="tab-doc">
+
+<form method="post" id="qt-form">
+
+  <!-- Header info bar -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h2 style="margin:0; font-size:22px; font-weight:700;">
+        {% if doc.id %}แก้ไข{{ type_info.name }}{% else %}สร้าง{{ type_info.name }}ใหม่{% endif %}
+      </h2>
+      {% if doc.id %}
+      <small class="text-muted">
+        <i class="fas fa-circle" style="font-size:8px; color:#cbd5e1;"></i>
+        {% set lbl, color = doc.status_label() %}<span class="text-{{ color }}">{{ lbl }}</span>
+      </small>
+      {% endif %}
+    </div>
+    <div class="text-right">
+      <small class="text-muted">เลขที่เอกสาร</small><br>
+      <strong style="color:#6366f1; font-size:15px;">{{ doc.number if doc.id else 'จะสร้างให้อัตโนมัติ' }}</strong>
+    </div>
+  </div>
+
+  <!-- Header (customer + dates) -->
+  <div class="card">
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-6">
+          <div class="form-group">
+            <label>ลูกค้า <span class="text-danger">*</span></label>
+            <select class="form-control" name="customer_id" id="customer_id" required>
+              <option value="">— เลือกลูกค้า —</option>
+              {% for c in all_customers %}
+              <option value="{{ c.id }}"
+                      data-tax-id="{{ c.tax_id or '' }}"
+                      data-branch="{{ c.branch or '' }}"
+                      data-phone="{{ c.phone or '' }}"
+                      {% if doc.customer_id == c.id %}selected{% endif %}>
+                {{ c.name }}{% if c.code %} ({{ c.code }}){% endif %}{% if c.tax_id %} · {{ c.tax_id }}{% endif %}
+              </option>
+              {% endfor %}
+            </select>
+            <small class="form-text">
+              <a href="{{ url_for('customers.edit') }}" target="_blank"><i class="fas fa-plus"></i> เพิ่มลูกค้าใหม่</a>
+              {% if all_customers %}
+                · <span class="text-muted">{{ all_customers|length }} ราย</span>
+              {% else %}
+                · <span class="text-danger">⚠️ ยังไม่มีลูกค้าในระบบ — กดเพิ่มลูกค้าใหม่ก่อน</span>
+              {% endif %}
+              · <span id="customer-meta" class="text-muted">{{ doc.customer_snapshot_tax_id or '' }}</span>
+            </small>
+          </div>
+        </div>
+        {% if display.show_project %}
+        <div class="col-md-6">
+          <div class="form-group">
+            <label>ชื่อโครงการ / เรื่อง</label>
+            <input class="form-control" name="project_name" value="{{ doc.project_name or '' }}">
+          </div>
+        </div>
+        {% endif %}
+
+        <div class="col-md-3 form-group">
+          <label class="font-weight-bold text-primary">
+            <i class="far fa-calendar-alt"></i> วันที่ออกเอกสาร <span class="text-danger">*</span>
+          </label>
+          <input class="form-control" type="date" name="issue_date" required
+                 value="{{ doc.issue_date.isoformat() if doc.issue_date else today().isoformat() }}">
+          <small class="form-text text-muted">วันที่นี้จะแสดงใน PDF (มุมขวาบน)</small>
+        </div>
+
+        {% if doc_type == 'QT' %}
+        <div class="col-md-3 form-group">
+          <label>ยืนราคาถึง</label>
+          <input class="form-control" type="date" name="valid_until"
+                 value="{{ doc.valid_until.isoformat() if doc.valid_until else '' }}">
+        </div>
+        {% elif doc_type == 'IV' %}
+        <div class="col-md-3 form-group">
+          <label>ครบกำหนดชำระ</label>
+          <input class="form-control" type="date" name="due_date"
+                 value="{{ doc.due_date.isoformat() if doc.due_date else '' }}">
+        </div>
+        {% elif doc_type == 'DO' %}
+        <div class="col-md-3 form-group">
+          <label>วันที่ส่งของ</label>
+          <input class="form-control" type="date" name="delivery_date"
+                 value="{{ doc.delivery_date.isoformat() if doc.delivery_date else '' }}">
+        </div>
+        {% elif doc_type == 'TI' %}
+        <div class="col-md-3 form-group">
+          <label>วันที่ออกใบกำกับภาษี</label>
+          <input class="form-control" type="date" name="tax_date"
+                 value="{{ doc.tax_date.isoformat() if doc.tax_date else '' }}">
+        </div>
+        {% elif doc_type == 'RC' %}
+        <div class="col-md-3 form-group">
+          <label>วันที่รับชำระ</label>
+          <input class="form-control" type="date" name="payment_date"
+                 value="{{ doc.payment_date.isoformat() if doc.payment_date else '' }}">
+        </div>
+        {% endif %}
+
+        {% if display.show_reference %}
+        <div class="col-md-3 form-group">
+          <label>เลขอ้างอิง</label>
+          <input class="form-control" name="reference" value="{{ doc.reference or '' }}">
+        </div>
+        {% endif %}
+        <div class="col-md-3 form-group">
+          <label>VAT (%)</label>
+          <input class="form-control" type="number" step="0.01" id="vat_rate"
+                 name="vat_rate" value="{{ doc.vat_rate or 7.0 }}">
+          {% if display.show_vat_options %}
+          <div class="form-check mt-1">
+            <input type="checkbox" id="price_includes_vat" name="price_includes_vat"
+                   class="form-check-input" {% if doc.price_includes_vat %}checked{% endif %}>
+            <label class="form-check-label" for="price_includes_vat">ราคารวม VAT แล้ว</label>
+          </div>
+          {% endif %}
+        </div>
+
+        {% if doc_type == 'DO' %}
+        <div class="col-md-8 form-group">
+          <label>ที่อยู่จัดส่ง (ถ้าต่างจากที่อยู่ลูกค้า)</label>
+          <textarea class="form-control" name="delivery_address" rows="2">{{ doc.delivery_address or '' }}</textarea>
+        </div>
+        <div class="col-md-4 form-group">
+          <label>ชื่อผู้รับสินค้า</label>
+          <input class="form-control" name="receiver_name" value="{{ doc.receiver_name or '' }}">
+        </div>
+        {% endif %}
+
+        {% if doc_type == 'RC' %}
+        <div class="col-md-4 form-group">
+          <label>วิธีการชำระเงิน</label>
+          <select class="form-control" name="payment_method">
+            <option value="cash"        {% if doc.payment_method == 'cash' %}selected{% endif %}>เงินสด</option>
+            <option value="transfer"    {% if doc.payment_method == 'transfer' %}selected{% endif %}>โอนเงิน</option>
+            <option value="cheque"      {% if doc.payment_method == 'cheque' %}selected{% endif %}>เช็ค</option>
+            <option value="credit_card" {% if doc.payment_method == 'credit_card' %}selected{% endif %}>บัตรเครดิต</option>
+            <option value="other"       {% if doc.payment_method == 'other' %}selected{% endif %}>อื่นๆ</option>
+          </select>
+        </div>
+        <div class="col-md-4 form-group">
+          <label>เลขที่เช็ค / อ้างอิงการโอน</label>
+          <input class="form-control" name="payment_reference" value="{{ doc.payment_reference or '' }}">
+        </div>
+        <div class="col-md-4 form-group">
+          <label>จำนวนเงินที่รับ</label>
+          <input class="form-control text-right" type="number" step="0.01"
+                 name="paid_amount" value="{{ doc.paid_amount or 0 }}">
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Items -->
+  <div class="card">
+    <div class="card-header"><h3 class="card-title"><i class="fas fa-list mr-1"></i> รายการ</h3></div>
+    <div class="card-body p-0">
+      <table class="table table-sm mb-0 qt-items">
+        <thead class="thead-light">
+          <tr>
+            <th style="width:36px;" class="text-center">#</th>
+            <th>รายการ</th>
+            {% if display.show_item_account %}<th style="width:110px;">บัญชี</th>{% endif %}
+            <th style="width:90px;" class="text-right">จำนวน</th>
+            {% if display.show_item_unit %}<th style="width:80px;">หน่วย</th>{% endif %}
+            <th style="width:120px;" class="text-right">ราคา/หน่วย</th>
+            {% if display.show_item_discount %}<th style="width:80px;" class="text-right">ลด %</th>{% endif %}
+            <th style="width:130px;" class="text-right">รวม</th>
+            <th style="width:40px;"></th>
+          </tr>
+        </thead>
+        <tbody id="items-body">
+          {% for it in doc.items %}
+          <tr class="qt-row">
+            <td class="text-center row-no">{{ loop.index }}</td>
+            <td>
+              <input type="hidden" name="item_product_id[]" value="{{ it.product_id or '' }}">
+              {% if not display.show_item_code %}<input type="hidden" name="item_code[]" value="{{ it.code or '' }}">{% endif %}
+              <input class="form-control form-control-sm item-name font-weight-bold" name="item_name[]"
+                     value="{{ it.name }}" placeholder="ค้นหาสินค้า หรือพิมพ์ชื่อ" autocomplete="off">
+              {% if display.show_item_code %}
+              <input class="form-control form-control-sm mt-1" name="item_code[]" value="{{ it.code or '' }}" placeholder="รหัสสินค้า">
+              {% endif %}
+              {% if display.show_item_description %}
+              <textarea class="form-control form-control-sm mt-1" name="item_description[]" rows="1"
+                        placeholder="รายละเอียดเพิ่มเติม">{{ it.description or '' }}</textarea>
+              {% else %}
+              <input type="hidden" name="item_description[]" value="{{ it.description or '' }}">
+              {% endif %}
+            </td>
+            {% if display.show_item_account %}
+            <td><input class="form-control form-control-sm" name="item_account[]" value="{{ it.account_code or '' }}" placeholder="เช่น 4100"></td>
+            {% endif %}
+            <td><input class="form-control form-control-sm item-qty text-right" type="number" step="0.001" name="item_quantity[]" value="{{ it.quantity }}"></td>
+            {% if display.show_item_unit %}
+            <td><input class="form-control form-control-sm item-unit" name="item_unit[]" value="{{ it.unit or 'ชิ้น' }}"></td>
+            {% else %}
+            <td style="display:none;"><input type="hidden" name="item_unit[]" value="{{ it.unit or 'ชิ้น' }}"></td>
+            {% endif %}
+            <td><input class="form-control form-control-sm item-price text-right" type="number" step="0.01" name="item_unit_price[]" value="{{ it.unit_price }}"></td>
+            {% if display.show_item_discount %}
+            <td><input class="form-control form-control-sm item-disc text-right" type="number" step="0.01" name="item_discount_percent[]" value="{{ it.discount_percent or 0 }}"></td>
+            {% else %}
+            <td style="display:none;"><input type="hidden" class="item-disc" name="item_discount_percent[]" value="0"></td>
+            {% endif %}
+            <td class="text-right item-total font-weight-bold pt-2">{{ it.line_total | money }}</td>
+            <td class="text-center"><button type="button" class="btn btn-sm btn-link text-danger" onclick="removeRow(this)"><i class="fas fa-trash"></i></button></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="card-footer bg-light">
+      <button type="button" class="btn btn-sm btn-default" onclick="addRow()">
+        <i class="fas fa-plus"></i> เพิ่มรายการ
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== NEW: เพิ่มเติม (สกุลเงิน / หมวดหมู่ / แท็ก) ===== -->
+  {% if display.show_currency or display.show_category or display.show_tags %}
+  <div class="card card-outline card-info">
+    <div class="card-header py-2"><h3 class="card-title"><i class="fas fa-tags mr-1"></i> ข้อมูลเพิ่มเติม</h3></div>
+    <div class="card-body py-2">
+      <div class="row">
+        {% if display.show_currency %}
+        <div class="col-md-3 form-group">
+          <label>สกุลเงิน</label>
+          <select class="form-control" name="currency">
+            {% for code, sym, name in currencies %}
+            <option value="{{ code }}" {% if (doc.currency or 'THB') == code %}selected{% endif %}>{{ sym }} {{ code }} — {{ name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3 form-group">
+          <label>อัตราแลกเปลี่ยน (vs THB)</label>
+          <input class="form-control" type="number" step="0.000001" name="currency_rate"
+                 value="{{ doc.currency_rate or 1.0 }}">
+        </div>
+        {% endif %}
+        {% if display.show_category %}
+        <div class="col-md-3 form-group">
+          <label>กลุ่มจัดประเภท
+            <a href="{{ url_for('categories.edit') }}" target="_blank" class="small ml-1">
+              <i class="fas fa-plus-circle"></i>
+            </a>
+          </label>
+          <select class="form-control" name="category_id">
+            <option value="">— ไม่ระบุ —</option>
+            {% for c in all_categories %}
+            <option value="{{ c.id }}" {% if doc.category_id == c.id %}selected{% endif %}>{{ c.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        {% endif %}
+        {% if display.show_tags %}
+        <div class="col-md-3 form-group">
+          <label>แท็ก <small class="text-muted">(คั่นด้วย ,)</small></label>
+          <input class="form-control" name="tags" value="{{ doc.tags or '' }}"
+                 placeholder="เช่น ด่วน, VIP, รอชำระ">
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ===== NEW: ไฟล์แนบ ===== -->
+  {% if display.show_attachments and doc.id %}
+  <div class="card card-outline card-secondary">
+    <div class="card-header py-2"><h3 class="card-title"><i class="fas fa-paperclip mr-1"></i> ไฟล์แนบ</h3></div>
+    <div class="card-body py-2">
+      {% if doc.attachments %}
+      <ul class="list-group mb-2">
+        {% for a in doc.attachments %}
+        <li class="list-group-item d-flex align-items-center py-2">
+          <i class="fas fa-file mr-2 text-muted"></i>
+          <a href="{{ url_for('documents.attachment_download', doc_type=doc_type, doc_id=doc.id, aid=a.id) }}"
+             class="flex-grow-1">{{ a.original_name }}</a>
+          <small class="text-muted mr-2">{{ (a.file_size / 1024)|round|int }} KB</small>
+          {# ใช้ form= attribute เพื่อไม่ให้ <form> ซ้อนกับ qt-form #}
+          <button form="attach-del-{{ a.id }}" class="btn btn-sm btn-link text-danger"
+                  onclick="return confirm('ลบไฟล์?');"><i class="fas fa-trash"></i></button>
+        </li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+      <div class="d-flex align-items-center">
+        <input type="file" name="attachment" multiple class="form-control-file flex-grow-1"
+               form="attach-upload-form">
+        <button class="btn btn-sm btn-info" type="submit" form="attach-upload-form"><i class="fas fa-upload"></i> อัปโหลด</button>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Approval / signature block settings -->
+  <div class="card card-outline card-success">
+    <div class="card-header py-2">
+      <h3 class="card-title"><i class="fas fa-signature mr-1"></i> ช่องลายเซ็น "อนุมัติโดย" ใน PDF</h3>
+    </div>
+    <div class="card-body py-2">
+      <div class="row align-items-end">
+        <div class="col-md-4">
+          <div class="form-check mt-2 mb-2">
+            <input type="checkbox" class="form-check-input" id="show_approval_date" name="show_approval_date"
+                   value="1" {% if doc.show_approval_date is none or doc.show_approval_date %}checked{% endif %}>
+            <label class="form-check-label font-weight-bold" for="show_approval_date">
+              แสดงวันที่ในช่อง "อนุมัติโดย"
+            </label>
+          </div>
+          <small class="text-muted">ถ้าไม่ติ๊ก → ช่องอนุมัติจะมีเส้นประให้กรอกด้วยมือ</small>
+        </div>
+        <div class="col-md-4 form-group mb-2">
+          <label>วันที่อนุมัติ (ถ้าต่างจากวันที่ออก)</label>
+          <input class="form-control" type="date" name="approval_date"
+                 value="{{ doc.approval_date.isoformat() if doc.approval_date else '' }}">
+          <small class="form-text text-muted">เว้นว่าง = ใช้วันที่ออกเอกสาร</small>
+        </div>
+        <div class="col-md-4">
+          <div class="alert alert-light border mb-2 py-2 text-sm">
+            <strong>ตัวอย่าง:</strong> <span id="approval-preview" class="text-muted">วันที่ ............</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Totals + notes -->
+  <div class="row">
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-body">
+          {% if display.show_note %}
+          <div class="form-group">
+            <label>หมายเหตุ</label>
+            <textarea class="form-control" name="note" rows="3">{{ doc.note or '' }}</textarea>
+          </div>
+          {% endif %}
+          {% if display.show_terms %}
+          <div class="form-group mb-0">
+            <label>เงื่อนไข</label>
+            <textarea class="form-control" name="terms" rows="3">{{ doc.terms or '' }}</textarea>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card card-outline card-primary">
+        <div class="card-header"><h3 class="card-title">สรุปยอด</h3></div>
+        <div class="card-body p-3">
+          <div class="d-flex justify-content-between mb-1"><span class="text-muted">มูลค่ารวม</span><span id="t-subtotal">0.00</span></div>
+          <div class="d-flex justify-content-between mb-1 align-items-center">
+            <span class="text-muted">ส่วนลดท้ายบิล</span>
+            <input class="form-control form-control-sm text-right" style="max-width:110px;"
+                   type="number" step="0.01" id="discount_amount"
+                   name="discount_amount" value="{{ doc.discount_amount or 0 }}">
+          </div>
+          <div class="d-flex justify-content-between mb-1"><span class="text-muted">หลังหักส่วนลด</span><span id="t-after-discount">0.00</span></div>
+          <div class="d-flex justify-content-between mb-1"><span class="text-muted">VAT (<span id="t-vat-rate-display">{{ doc.vat_rate }}</span>%)</span><span id="t-vat">0.00</span></div>
+          <hr class="my-2">
+          <div class="d-flex justify-content-between font-weight-bold h5 text-primary">
+            <span>ยอดสุทธิ</span><span id="t-grand">0.00</span>
+          </div>
+          <div class="text-right text-muted mt-1" style="font-size:12px;" id="t-baht-text"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Sticky bottom action bar (PEAK-style) ===== -->
+  <div class="sticky-actions">
+    <div class="info">
+      {% if type_info %}<strong>{{ type_info.name }}</strong>{% endif %}
+      {% if doc.id %}<code>{{ doc.number }}</code>{% else %}<span class="text-muted">(ใหม่)</span>{% endif %}
+    </div>
+    <select class="form-control mr-2" name="status" style="width:auto; border-radius:999px;">
+      {% for s in statuses %}
+      <option value="{{ s }}" {% if doc.status == s %}selected{% endif %}>
+        {% if s == 'draft' %}ร่าง
+        {% elif s == 'sent' %}ส่งให้ลูกค้า
+        {% elif s == 'accepted' %}ลูกค้าตอบรับ
+        {% elif s == 'rejected' %}ลูกค้าปฏิเสธ
+        {% elif s == 'expired' %}หมดอายุ
+        {% elif s == 'converted' %}ออกเอกสารแล้ว
+        {% elif s == 'paid' %}ชำระแล้ว
+        {% elif s == 'partial' %}ชำระบางส่วน
+        {% elif s == 'overdue' %}เกินกำหนด
+        {% elif s == 'shipped' %}ส่งสินค้าแล้ว
+        {% elif s == 'delivered' %}ส่งถึงปลายทาง
+        {% elif s == 'issued' %}ออกแล้ว
+        {% elif s == 'void' %}ยกเลิก
+        {% else %}{{ s }}{% endif %}
+      </option>
+      {% endfor %}
+    </select>
+    <a href="{{ url_for('documents.index', doc_type=doc_type) }}" class="btn-action cancel">ยกเลิก</a>
+    <button type="submit" class="btn-action save" id="btn-save">
+      <i class="fas fa-save"></i> <span class="lbl">บันทึก</span>
+    </button>
+    {% if doc.id and doc_type == 'QT' %}
+    <button type="submit" class="btn-action approve" id="btn-approve">
+      <i class="fas fa-check"></i> <span class="lbl">อนุมัติใบเสนอราคา</span>
+    </button>
+    {% endif %}
+  </div>
+</form>
+
+{# ===== Attach forms (ไว้นอก qt-form กัน HTML5 nested-form bug) ===== #}
+{% if display.show_attachments and doc.id %}
+<form id="attach-upload-form" method="post"
+      action="{{ url_for('documents.attach', doc_type=doc_type, doc_id=doc.id) }}"
+      enctype="multipart/form-data" style="display:none;"></form>
+{% for a in doc.attachments %}
+<form id="attach-del-{{ a.id }}" method="post"
+      action="{{ url_for('documents.attachment_delete', doc_type=doc_type, doc_id=doc.id, aid=a.id) }}"
+      style="display:none;"></form>
+{% endfor %}
+{% endif %}
+
+</div><!-- end #tab-doc -->
+
+<!-- ============ Tab: ข้อมูลประวัติ ============ -->
+<div id="tab-history" style="display:none;">
+  <div class="section-card">
+    <div class="section-head">
+      <span class="section-bullet done"><i class="fas fa-history"></i></span>
+      ประวัติเอกสาร
+    </div>
+    {% if doc.id %}
+    <table class="table table-sm">
+      <tr><th style="width:180px;">เลขที่</th><td><code>{{ doc.number }}</code></td></tr>
+      <tr><th>สถานะปัจจุบัน</th><td>{% set lbl, color = doc.status_label() %}<span class="badge badge-{{ color }}">{{ lbl }}</span></td></tr>
+      <tr><th>สร้างเมื่อ</th><td>{{ doc.created_at.strftime('%d/%m/%Y %H:%M') if doc.created_at else '-' }}</td></tr>
+      <tr><th>แก้ไขล่าสุด</th><td>{{ doc.updated_at.strftime('%d/%m/%Y %H:%M') if doc.updated_at else '-' }}</td></tr>
+      {% if doc.source_doc %}
+      <tr><th>สร้างจาก</th><td>
+        <a href="{{ url_for('documents.view', doc_type=doc.source_doc.doc_type, doc_id=doc.source_doc.id) }}">
+          {{ doc.source_doc.number }}
+        </a>
+      </td></tr>
+      {% endif %}
+      {% if doc.derived_docs %}
+      <tr><th>เอกสารต่อเนื่อง</th><td>
+        {% for dd in doc.derived_docs %}
+        <a href="{{ url_for('documents.view', doc_type=dd.doc_type, doc_id=dd.id) }}" class="badge badge-light mr-1">
+          {{ dd.number }} ({{ dd.doc_type }})
+        </a>
+        {% endfor %}
+      </td></tr>
+      {% endif %}
+    </table>
+    {% else %}
+    <p class="text-muted">ยังไม่มีประวัติ — บันทึกเอกสารก่อน</p>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+function showFormTab(name) {
+  document.getElementById('tab-doc').style.display = (name === 'doc') ? '' : 'none';
+  document.getElementById('tab-history').style.display = (name === 'history') ? '' : 'none';
+  document.querySelectorAll('.form-tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+}
+</script>
+
+<!-- ============ Modal: ตั้งค่าการแสดงผลข้อมูล ============ -->
+<div class="modal fade" id="displaySettingsModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <form id="display-form" method="post" action="{{ url_for('settings.save_display') }}">
+      <div class="modal-header">
+        <h5 class="modal-title font-weight-bold">
+          <i class="fas fa-sliders-h mr-2"></i>ตั้งค่าการแสดงผลข้อมูล
+        </h5>
+        <button type="button" class="close" data-dismiss="modal">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+
+        <!-- Section 1: Header fields -->
+        <h6 class="font-weight-bold text-primary mt-1 mb-3">
+          <i class="fas fa-chevron-down mr-1"></i> ตั้งค่าส่วนแรก
+          <small class="float-right text-muted" style="cursor:pointer;">ย่อ/ขยาย</small>
+        </h6>
+        <div class="ds-row">
+          <span>ชื่อโครงการ / เรื่อง</span>
+          <label class="ds-toggle">
+            <input type="checkbox" name="show_project" value="1" {% if display.show_project %}checked{% endif %}>
+            <span class="slider"></span>
+            <span class="lbl"></span>
+          </label>
+        </div>
+        <div class="ds-row">
+          <span>เลขอ้างอิง</span>
+          <label class="ds-toggle">
+            <input type="checkbox" name="show_reference" value="1" {% if display.show_reference %}checked{% endif %}>
+            <span class="slider"></span>
+            <span class="lbl"></span>
+          </label>
+        </div>
+        <div class="ds-row">
+          <span>ตัวเลือก VAT (รวม/แยก)</span>
+          <label class="ds-toggle">
+            <input type="checkbox" name="show_vat_options" value="1" {% if display.show_vat_options %}checked{% endif %}>
+            <span class="slider"></span>
+            <span class="lbl"></span>
+          </label>
+        </div>
+        <div class="ds-row">
+          <span>หมายเหตุ</span>
+          <label class="ds-toggle">
+            <input type="checkbox" name="show_note" value="1" {% if display.show_note %}checked{% endif %}>
+            <span class="slider"></span>
+            <span class="lbl"></span>
+          </label>
+        </div>
+        <div class="ds-row">
+          <span>เงื่อนไข</span>
+          <label class="ds-toggle">
+            <input type="checkbox" name="show_terms" value="1" {% if display.show_terms %}checked{% endif %}>
+            <span class="slider"></span>
+            <span class="lbl"></span>
+          </label>
+        </div>
+        <div class="ds-row">
+          <span>สกุลเงิน &amp; อัตราแลกเปลี่ยน</span>
+          <label class="ds-toggle">
+            <input type="checkbox" name="show_currency" value="1" {% if display.show_currency %}checked{% endif %}>
+            <span class="slider"></span><span class="lbl"></span>
+          </label>
+        </div>
+        <div class="ds-row">
+          <span>กลุ่มจัดประเภท</span>
+          <label class="ds-toggle">
+            <input type="checkbox" name="show_category" value="1" {% if display.show_category %}checked{% endif %}>
+            <span class="slider"></span><span class="lbl"></span>
+          </label>
+        </div>
+        <div class="ds-row">
+          <span>แท็ก</span>
+          <label class="ds-toggle">
+            <input type="checkbox" name="show_tags" value="1" {% if display.show_tags %}checked{% endif %}>
+            <span class="slider"></span><span class="lbl"></span>
+          </label>
+        </div>
+        <div class="ds-row">
+          <span>แนบไฟล์</span>
+          <label class="ds-toggle">
+            <input type="checkbox" name="show_attachments" value="1" {% if display.show_attachments %}checked{% endif %}>
+            <span class="slider"></span><span class="lbl"></span>
+          </label>
+        </div>
+
+        <!-- Section 2: Item columns -->
+        <h6 class="font-weight-bold text-primary mt-4 mb-3">
+          <i class="fas fa-chevron-down mr-1"></i> ตั้งค่ารายการ
+        </h6>
+
+        <div class="ds-row" style="border:none;">
+          <span class="text-muted">รูปแบบรายการ</span>
+          <div>
+            <label class="mr-3 mb-0"><input type="radio" name="items_style" value="detailed" {% if display.items_style == 'detailed' %}checked{% endif %}> รูปแบบใหม่</label>
+            <label class="mb-0"><input type="radio" name="items_style" value="compact" {% if display.items_style == 'compact' %}checked{% endif %}> รูปแบบเก่า</label>
+          </div>
+        </div>
+
+        <div class="ds-row">
+          <span>รหัสสินค้า</span>
+          <label class="ds-toggle">
+            <input type="checkbox" name="show_item_code" value="1" {% if display.show_item_code %}checked{% endif %}>
+            <span class="slider"></span><span class="lbl"></span>
+          </label>
+        </div>
+        <div class="ds-row">
+          <span>คำอธิบายเพิ่มเติม (ใต้ชื่อรายการ)</span>
+          <label class="ds-toggle">
+            <input type="checkbox" name="show_item_description" value="1" {% if display.show_item_description %}checked{% endif %}>
+            <span class="slider"></span><span class="lbl"></span>
+          </label>
+        </div>
+        <div class="ds-row">
+          <span>หน่วย</span>
+          <label class="ds-toggle">
+            <input type="checkbox" name="show_item_unit" value="1" {% if display.show_item_unit %}checked{% endif %}>
+            <span class="slider"></span><span class="lbl"></span>
+          </label>
+        </div>
+        <div class="ds-row">
+          <span>ส่วนลด %</span>
+          <label class="ds-toggle">
+            <input type="checkbox" name="show_item_discount" value="1" {% if display.show_item_discount %}checked{% endif %}>
+            <span class="slider"></span><span class="lbl"></span>
+          </label>
+        </div>
+        <div class="ds-row">
+          <span>บัญชี (ในรายการ)</span>
+          <label class="ds-toggle">
+            <input type="checkbox" name="show_item_account" value="1" {% if display.show_item_account %}checked{% endif %}>
+            <span class="slider"></span><span class="lbl"></span>
+          </label>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">ยกเลิก</button>
+        <button type="submit" class="btn" style="background: linear-gradient(135deg,#06b6d4,#0891b2); color:#fff; font-weight:700; min-width: 120px;">
+          <i class="fas fa-save"></i> บันทึก
+        </button>
+      </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<style>
+.ds-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 4px; border-bottom: 1px solid #f1f5f9;
+}
+.ds-row:last-child { border-bottom: none; }
+.ds-row > span { font-size: 14px; color: #1e293b; }
+/* iOS-style toggle */
+.ds-toggle {
+  position: relative; display: inline-flex; align-items: center; gap: 6px;
+  cursor: pointer; margin: 0;
+}
+.ds-toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+.ds-toggle .slider {
+  width: 42px; height: 24px; background: #cbd5e1; border-radius: 999px;
+  position: relative; transition: background .15s;
+}
+.ds-toggle .slider::after {
+  content: ''; position: absolute; top: 2px; left: 2px;
+  width: 20px; height: 20px; background: #fff; border-radius: 50%;
+  transition: transform .15s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.ds-toggle input:checked + .slider { background: #06b6d4; }
+.ds-toggle input:checked + .slider::after { transform: translateX(18px); }
+.ds-toggle .lbl::before {
+  content: 'ปิด'; color: #64748b; font-size: 12px; font-weight: 600;
+  min-width: 24px; display: inline-block;
+}
+.ds-toggle input:checked ~ .lbl::before { content: 'เปิด'; color: #0891b2; }
+</style>
+
+<script src="{{ url_for('static', filename='js/quotation.js') }}"></script>
+<script>
+// Live preview ของช่อง "อนุมัติโดย"
+(function() {
+  const showCb = document.getElementById('show_approval_date');
+  const approvalDate = document.querySelector('input[name="approval_date"]');
+  const issueDate = document.querySelector('input[name="issue_date"]');
+  const preview = document.getElementById('approval-preview');
+  if (!showCb || !preview) return;
+
+  function update() {
+    if (!showCb.checked) {
+      preview.textContent = 'วันที่ ............................';
+      preview.className = 'text-muted';
+      return;
+    }
+    const d = approvalDate.value || issueDate.value;
+    if (!d) { preview.textContent = '(เลือกวันที่)'; return; }
+    const [y, m, day] = d.split('-');
+    preview.textContent = `วันที่ ${day}/${m}/${y}`;
+    preview.className = 'text-success font-weight-bold';
+  }
+  showCb.addEventListener('change', update);
+  approvalDate.addEventListener('change', update);
+  issueDate.addEventListener('change', update);
+  update();
+})();
+
+// === Save/Approve submit handler — รัน หลัง quotation.js validation ===
+(function() {
+  const form = document.getElementById('qt-form');
+  if (!form) return;
+
+  // Track button clicked
+  let lastSubmitter = null;
+  form.querySelectorAll('button[type=submit]').forEach(btn => {
+    btn.addEventListener('click', () => { lastSubmitter = btn; });
+  });
+
+  form.addEventListener('submit', function(e) {
+    // ถ้า quotation.js's validator block ไว้ (ไม่ได้เลือกลูกค้า/ไม่มีรายการ) → ไม่ทำอะไร
+    if (e.defaultPrevented) return;
+
+    const btn = e.submitter || lastSubmitter;
+    const isApprove = btn && btn.id === 'btn-approve';
+
+    // ถ้าเป็นปุ่ม "อนุมัติ" → set status = accepted ก่อนส่ง
+    if (isApprove) {
+      const sel = document.querySelector('select[name=status]');
+      if (sel) sel.value = 'accepted';
+    }
+
+    // แสดง overlay กลางจอ
+    const action = isApprove ? 'อนุมัติ' : 'บันทึก';
+    showCenterToast('กำลัง' + action + '...');
+
+    // ใช้ requestAnimationFrame แทน setTimeout — รอ frame ถัดไปเพื่อให้ form submit ไปก่อน
+    requestAnimationFrame(() => {
+      document.querySelectorAll('.btn-action').forEach(b => {
+        b.style.pointerEvents = 'none';
+        if (b.tagName === 'BUTTON') b.disabled = true;
+      });
+      if (btn) {
+        const lbl = btn.querySelector('.lbl');
+        if (lbl) lbl.textContent = 'กำลัง' + action + '...';
+        const icon = btn.querySelector('i');
+        if (icon) icon.className = 'fas fa-spinner fa-spin';
+        btn.style.opacity = '0.85';
+      }
+    });
+  });
+})();
+
+function showCenterToast(msg) {
+  let el = document.getElementById('center-toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'center-toast';
+    el.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; z-index:99999;';
+    el.innerHTML = '<div style="background:#fff; padding:24px 40px; border-radius:14px; box-shadow:0 20px 60px rgba(0,0,0,0.3); display:flex; align-items:center; gap:14px; font-size:18px; font-weight:600; color:#1e293b;"><i class="fas fa-spinner fa-spin" style="color:#06b6d4; font-size:28px;"></i><span>' + msg + '</span></div>';
+    document.body.appendChild(el);
+  }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,38 @@
+# ThaiBill - Nginx reverse proxy config
+# วางที่ /etc/nginx/sites-available/thaibill แล้ว symlink ไป sites-enabled
+server {
+    listen 80;
+    server_name _;  # แก้เป็นโดเมนของคุณ เช่น quotation.example.com
+
+    client_max_body_size 16M;
+
+    # Logs
+    access_log /var/log/nginx/thaibill_access.log;
+    error_log  /var/log/nginx/thaibill_error.log;
+
+    # Static files - เสิร์ฟตรงจาก nginx จะเร็วกว่า
+    location /static/ {
+        alias /opt/thaibill/app/static/;
+        expires 7d;
+        access_log off;
+        add_header Cache-Control "public, max-age=604800";
+    }
+
+    # Proxy ไป gunicorn
+    location / {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_redirect off;
+        proxy_buffering off;
+        proxy_read_timeout 60s;
+    }
+}
+
+# ----------------------------------------------------------
+# ถ้าต้องการ HTTPS (แนะนำ): ติดตั้ง certbot แล้วรัน
+#   sudo apt install certbot python3-certbot-nginx
+#   sudo certbot --nginx -d your.domain.com
+# ----------------------------------------------------------

@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block page_title %}<i class="fas fa-users-cog mr-2"></i>จัดการผู้ใช้งาน{% endblock %}
+{% block topbar_actions %}
+<a class="btn btn-primary" href="{{ url_for('users.new') }}"><i class="fas fa-user-plus"></i> เพิ่มผู้ใช้</a>
+{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-body p-0">
+    <table class="table table-hover mb-0">
+      <thead><tr>
+        <th>ชื่อผู้ใช้</th><th>ชื่อ-นามสกุล</th><th>อีเมล</th>
+        <th>สิทธิ์</th><th>สถานะ</th><th>เข้าใช้ล่าสุด</th><th></th>
+      </tr></thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td><strong>{{ u.username }}</strong></td>
+          <td>{{ u.full_name or '-' }}</td>
+          <td class="text-muted">{{ u.email or '-' }}</td>
+          <td>
+            {% if u.role == 'admin' %}
+              <span class="badge badge-danger"><i class="fas fa-shield-alt"></i> ผู้ดูแลระบบ</span>
+            {% else %}
+              <span class="badge badge-info"><i class="fas fa-user"></i> ผู้ใช้ทั่วไป</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if u.is_active %}<span class="badge badge-success">ใช้งานได้</span>
+            {% else %}<span class="badge badge-secondary">ระงับ</span>{% endif %}
+          </td>
+          <td class="text-muted small">{{ u.last_login.strftime('%d/%m/%Y %H:%M') if u.last_login else 'ยังไม่เคย' }}</td>
+          <td class="text-right">
+            <a class="btn btn-sm btn-default" href="{{ url_for('users.edit', uid=u.id) }}"><i class="fas fa-edit"></i></a>
+            {% if u.id != current_user.id %}
+            <form method="post" action="{{ url_for('users.toggle', uid=u.id) }}" style="display:inline;">
+              <button class="btn btn-sm btn-default" title="{{ 'ระงับ' if u.is_active else 'เปิดใช้' }}">
+                <i class="fas fa-{{ 'ban' if u.is_active else 'check' }}"></i>
+              </button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,205 @@
+{% extends 'base.html' %}
+{% block page_title %}<i class="fas fa-user-cog mr-2"></i>{% if user %}แก้ไขผู้ใช้: {{ user.username }}{% else %}เพิ่มผู้ใช้ใหม่{% endif %}{% endblock %}
+
+{% block head %}
+<style>
+.perm-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px;
+  background: #f8fafc; border-radius: 8px; padding: 14px;
+}
+.perm-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 6px 0; border-bottom: 1px solid #e2e8f0;
+  font-size: 14px;
+}
+.perm-row:nth-last-child(-n+2) { border-bottom: none; }
+.perm-toggle {
+  position: relative; display: inline-block; width: 38px; height: 22px;
+}
+.perm-toggle input { opacity: 0; width: 0; height: 0; }
+.perm-toggle .slider {
+  position: absolute; inset: 0; background: #cbd5e1; border-radius: 999px;
+  cursor: pointer; transition: .2s;
+}
+.perm-toggle .slider::after {
+  content: ''; position: absolute; top: 2px; left: 2px;
+  width: 18px; height: 18px; background: #fff; border-radius: 50%;
+  transition: .2s; box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+.perm-toggle input:checked + .slider { background: #10b981; }
+.perm-toggle input:checked + .slider::after { transform: translateX(16px); }
+.perm-group-title {
+  grid-column: 1/-1;
+  font-weight: 700; color: #475569; padding-top: 10px;
+  border-bottom: 2px solid #e2e8f0; margin-bottom: 4px;
+}
+.perm-group-title:first-child { padding-top: 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+{% set perms = user.get_permissions() if user else {} %}
+{% set is_new = (user is none) %}
+
+<form method="post">
+<div class="row">
+  <div class="col-md-7">
+    <div class="card"><div class="card-body">
+      <h5 class="card-title mb-3"><i class="fas fa-id-card mr-2"></i>ข้อมูลบัญชี</h5>
+      <div class="row">
+        <div class="col-md-6 form-group">
+          <label>ชื่อผู้ใช้ (Username) <span class="text-danger">*</span></label>
+          <input class="form-control" name="username" required
+                 value="{{ user.username if user else '' }}"
+                 {% if user %}readonly{% endif %}>
+        </div>
+        <div class="col-md-6 form-group">
+          <label>อีเมล</label>
+          <input class="form-control" name="email" type="email"
+                 value="{{ user.email or '' if user else '' }}">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>ชื่อ-นามสกุล</label>
+        <input class="form-control" name="full_name" value="{{ user.full_name or '' if user else '' }}">
+      </div>
+
+      <div class="form-group">
+        <label>{{ 'รหัสผ่านใหม่ (เว้นว่างถ้าไม่เปลี่ยน)' if user else 'รหัสผ่าน' }} {% if not user %}<span class="text-danger">*</span>{% endif %}</label>
+        <input class="form-control" type="password" name="{{ 'new_password' if user else 'password' }}"
+               {% if not user %}required{% endif %}>
+      </div>
+
+      <hr>
+
+      <h5 class="card-title mb-3"><i class="fas fa-shield-alt mr-2"></i>สิทธิ์การใช้งาน</h5>
+      <div class="form-group">
+        <label>ระดับสิทธิ์ (Role)</label>
+        <select class="form-control" name="role" onchange="togglePerms(this.value)">
+          <option value="admin" {% if user and user.role == 'admin' %}selected{% endif %}>
+            🛡️ ผู้ดูแลระบบ — เข้าได้ทุกเมนู ทุกฟีเจอร์
+          </option>
+          <option value="user" {% if not user or user.role == 'user' %}selected{% endif %}>
+            👤 ผู้ใช้ทั่วไป — กำหนดสิทธิ์เฉพาะเรื่องด้านล่าง
+          </option>
+        </select>
+      </div>
+
+      <div id="perms-section" style="{% if user and user.role == 'admin' %}display:none;{% endif %}">
+
+        <label class="font-weight-bold mb-2">🏢 บริษัทที่อนุญาตให้เข้าใช้:</label>
+        <div class="perm-grid mb-3" style="grid-template-columns: 1fr;">
+          {% set user_co_ids = (user.companies | map(attribute='id') | list) if user else [] %}
+          {% for co in all_active_companies %}
+          <div class="perm-row">
+            <span><i class="fas fa-building mr-2 text-muted"></i>{{ co.name }}</span>
+            <label class="perm-toggle">
+              <input type="checkbox" name="company_{{ co.id }}" value="1"
+                     {% if co.id in user_co_ids %}checked{% endif %}>
+              <span class="slider"></span>
+            </label>
+          </div>
+          {% endfor %}
+          {% if not all_active_companies %}
+          <div class="text-muted text-center py-3">ยังไม่มีบริษัทในระบบ — สร้างบริษัทก่อน</div>
+          {% endif %}
+        </div>
+        <small class="text-muted d-block mb-3">
+          <i class="fas fa-info-circle"></i> ผู้ใช้จะเห็นเฉพาะบริษัทที่ติ๊ก
+          (ผู้ดูแลระบบเห็นทุกบริษัทเสมอ)
+        </small>
+
+        <label class="font-weight-bold mb-2">เลือกสิทธิ์ที่อนุญาต:</label>
+        <div class="perm-grid">
+
+          <div class="perm-group-title">📄 เอกสาร (Documents)</div>
+          {% for p, label in [
+            ('view_documents','ดูเอกสาร'),
+            ('create_documents','สร้างเอกสาร'),
+            ('edit_documents','แก้ไขเอกสาร'),
+            ('delete_documents','ลบเอกสาร'),
+          ] %}
+          <div class="perm-row">
+            <span>{{ label }}</span>
+            <label class="perm-toggle">
+              <input type="checkbox" name="perm_{{ p }}" value="1" {% if perms.get(p) %}checked{% endif %}>
+              <span class="slider"></span>
+            </label>
+          </div>
+          {% endfor %}
+
+          <div class="perm-group-title">👥 ลูกค้า / สินค้า / หมวด</div>
+          {% for p, label in [
+            ('view_customers','ดูลูกค้า'),
+            ('create_customers','เพิ่มลูกค้า'),
+            ('edit_customers','แก้ลูกค้า'),
+            ('delete_customers','ลบลูกค้า'),
+            ('view_products','ดูสินค้า'),
+            ('create_products','เพิ่มสินค้า'),
+            ('edit_products','แก้สินค้า'),
+            ('delete_products','ลบสินค้า'),
+            ('view_categories','ดูหมวด'),
+            ('manage_categories','จัดการหมวด'),
+          ] %}
+          <div class="perm-row">
+            <span>{{ label }}</span>
+            <label class="perm-toggle">
+              <input type="checkbox" name="perm_{{ p }}" value="1" {% if perms.get(p) %}checked{% endif %}>
+              <span class="slider"></span>
+            </label>
+          </div>
+          {% endfor %}
+
+          <div class="perm-group-title">⚙️ ตั้งค่า / ระบบ</div>
+          {% for p, label in [
+            ('view_settings','ดูหน้าตั้งค่า'),
+            ('manage_settings','แก้ไขข้อมูลกิจการ/Backup'),
+            ('manage_users','จัดการผู้ใช้'),
+            ('manage_companies','เพิ่ม/สลับกิจการ'),
+            ('view_reports','ดูรายงาน'),
+          ] %}
+          <div class="perm-row">
+            <span>{{ label }}</span>
+            <label class="perm-toggle">
+              <input type="checkbox" name="perm_{{ p }}" value="1" {% if perms.get(p) %}checked{% endif %}>
+              <span class="slider"></span>
+            </label>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div></div>
+  </div>
+
+  <div class="col-md-5">
+    <div class="card"><div class="card-body">
+      {% if user %}
+      <div class="form-check mb-3">
+        <input type="checkbox" class="form-check-input" id="is_active" name="is_active"
+               value="1" {% if user.is_active %}checked{% endif %}>
+        <label class="form-check-label" for="is_active">เปิดใช้งานบัญชีนี้</label>
+      </div>
+      {% endif %}
+      <button class="btn btn-save btn-block" type="submit"><i class="fas fa-save"></i> บันทึก</button>
+      <a class="btn btn-default btn-block mt-2" href="{{ url_for('users.index') }}">ยกเลิก</a>
+
+      {% if user %}
+      <hr>
+      <div class="text-muted small">
+        <div><i class="fas fa-clock mr-1"></i> สร้างเมื่อ: {{ user.created_at.strftime('%d/%m/%Y %H:%M') }}</div>
+        {% if user.last_login %}
+        <div><i class="fas fa-sign-in-alt mr-1"></i> เข้าใช้ล่าสุด: {{ user.last_login.strftime('%d/%m/%Y %H:%M') }}</div>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div></div>
+  </div>
+</div>
+</form>
+
+<script>
+function togglePerms(role) {
+  document.getElementById('perms-section').style.display = (role === 'admin') ? 'none' : '';
+}
+</script>
+{% endblock %}

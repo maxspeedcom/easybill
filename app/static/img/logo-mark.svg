@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <defs>
+    <linearGradient id="eb-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="50%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#06b6d4"/>
+    </linearGradient>
+  </defs>
+  <!-- Rounded square frame -->
+  <rect x="8" y="8" width="84" height="84" rx="16" ry="16"
+        stroke="url(#eb-grad)" stroke-width="6" fill="none"/>
+  <!-- Stylized "E" with 3 horizontal bars -->
+  <rect x="28" y="28" width="44" height="9"  rx="2" fill="url(#eb-grad)"/>
+  <rect x="28" y="45.5" width="32" height="9" rx="2" fill="url(#eb-grad)"/>
+  <rect x="28" y="63" width="44" height="9"  rx="2" fill="url(#eb-grad)"/>
+</svg>

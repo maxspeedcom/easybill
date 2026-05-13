@@ -1,0 +1,240 @@
+{% extends 'base.html' %}
+{% block page_title %}
+<i class="fas {{ type_info.icon }} text-{{ type_info.color }} mr-2"></i>{{ type_info.name }} {{ doc.number }}
+{% endblock %}
+
+{% block topbar_actions %}
+<a class="btn btn-success" href="{{ url_for('documents.pdf', doc_type=doc_type, doc_id=doc.id) }}" target="_blank">
+  <i class="fas fa-file-pdf"></i> PDF
+</a>
+<a class="btn btn-default" href="{{ url_for('documents.print_view', doc_type=doc_type, doc_id=doc.id) }}" target="_blank">
+  <i class="fas fa-print"></i> พิมพ์
+</a>
+<a class="btn btn-warning" href="{{ url_for('documents.edit', doc_type=doc_type, doc_id=doc.id) }}">
+  <i class="fas fa-edit"></i> แก้ไข
+</a>
+
+<!-- Convert dropdown -->
+<div class="btn-group">
+  <button type="button" class="btn btn-info dropdown-toggle" data-toggle="dropdown">
+    <i class="fas fa-exchange-alt"></i> แปลงเป็น
+  </button>
+  <div class="dropdown-menu dropdown-menu-right">
+    {% for tt, info in doc.DOC_TYPES.items() if tt != doc_type %}
+    <form method="post" action="{{ url_for('documents.convert', doc_type=doc_type, doc_id=doc.id, target_type=tt) }}" style="margin:0;">
+      <button type="submit" class="dropdown-item">
+        <i class="fas {{ info.icon }} text-{{ info.color }} mr-2"></i>{{ info.name }}
+      </button>
+    </form>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- More dropdown -->
+<div class="btn-group">
+  <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+    <i class="fas fa-ellipsis-v"></i>
+  </button>
+  <div class="dropdown-menu dropdown-menu-right">
+    <form method="post" action="{{ url_for('documents.duplicate', doc_type=doc_type, doc_id=doc.id) }}" style="margin:0;">
+      <button type="submit" class="dropdown-item"><i class="fas fa-copy mr-2"></i>ทำสำเนา</button>
+    </form>
+    <div class="dropdown-divider"></div>
+    <form method="post" action="{{ url_for('documents.delete', doc_type=doc_type, doc_id=doc.id) }}"
+          style="margin:0;" onsubmit="return confirm('ยืนยันการลบเอกสาร {{ doc.number }}?');">
+      <button type="submit" class="dropdown-item text-danger"><i class="fas fa-trash mr-2"></i>ลบเอกสาร</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-md-9">
+    <div class="card card-outline card-{{ type_info.color }}">
+      <div class="card-header d-flex">
+        <h3 class="card-title">
+          <i class="fas {{ type_info.icon }} mr-1"></i>{{ type_info.name }}
+        </h3>
+        {% set lbl, color = doc.status_label() %}
+        <span class="badge badge-{{ color }} ml-auto" style="padding:6px 14px; font-size:13px;">{{ lbl }}</span>
+      </div>
+      <div class="card-body">
+        {% if doc.source_doc %}
+        <div class="alert alert-info py-2 mb-3">
+          <i class="fas fa-link"></i> เอกสารนี้ออกจาก:
+          <a href="{{ url_for('documents.view', doc_type=doc.source_doc.doc_type, doc_id=doc.source_doc.id) }}">
+            {{ doc.source_doc.type_info().name }} <code>{{ doc.source_doc.number }}</code>
+          </a>
+        </div>
+        {% endif %}
+
+        <div class="row">
+          <div class="col-md-6">
+            <small class="text-muted text-uppercase">ลูกค้า</small>
+            <h5 class="mb-1">{{ doc.customer_snapshot_name }}</h5>
+            {% if doc.customer_snapshot_tax_id %}
+              <div class="text-sm">เลขผู้เสียภาษี: <code>{{ doc.customer_snapshot_tax_id }}</code></div>
+            {% endif %}
+            {% if doc.customer_snapshot_branch %}
+              <div class="text-sm text-muted">สาขา: {{ doc.customer_snapshot_branch }}</div>
+            {% endif %}
+            {% if doc.customer_snapshot_address %}
+              <div class="text-sm text-muted" style="white-space:pre-line;">{{ doc.customer_snapshot_address }}</div>
+            {% endif %}
+          </div>
+          <div class="col-md-6">
+            <table class="table table-sm">
+              <tr><td class="text-muted">เลขที่:</td><td><code>{{ doc.number }}</code></td></tr>
+              <tr><td class="text-muted">วันที่ออก:</td><td><strong>{{ doc.issue_date | thaidate }}</strong></td></tr>
+              {% if doc_type == 'QT' and doc.valid_until %}
+              <tr><td class="text-muted">ยืนราคาถึง:</td><td>{{ doc.valid_until | thaidate }}</td></tr>
+              {% endif %}
+              {% if doc_type == 'IV' and doc.due_date %}
+              <tr><td class="text-muted">ครบกำหนดชำระ:</td><td>{{ doc.due_date | thaidate }}</td></tr>
+              {% endif %}
+              {% if doc_type == 'DO' and doc.delivery_date %}
+              <tr><td class="text-muted">วันที่ส่งของ:</td><td>{{ doc.delivery_date | thaidate }}</td></tr>
+              {% endif %}
+              {% if doc_type == 'TI' and doc.tax_date %}
+              <tr><td class="text-muted">วันที่ออกใบกำกับ:</td><td>{{ doc.tax_date | thaidate }}</td></tr>
+              {% endif %}
+              {% if doc_type == 'RC' and doc.payment_date %}
+              <tr><td class="text-muted">วันที่รับชำระ:</td><td>{{ doc.payment_date | thaidate }}</td></tr>
+              {% endif %}
+              {% if doc.project_name %}<tr><td class="text-muted">โครงการ:</td><td>{{ doc.project_name }}</td></tr>{% endif %}
+              {% if doc.reference %}<tr><td class="text-muted">อ้างอิง:</td><td>{{ doc.reference }}</td></tr>{% endif %}
+              {% if doc_type == 'RC' %}
+                {% if doc.payment_method %}
+                <tr><td class="text-muted">วิธีชำระ:</td><td>
+                  {% if doc.payment_method == 'cash' %}เงินสด
+                  {% elif doc.payment_method == 'transfer' %}โอนเงิน
+                  {% elif doc.payment_method == 'cheque' %}เช็ค
+                  {% elif doc.payment_method == 'credit_card' %}บัตรเครดิต
+                  {% else %}{{ doc.payment_method }}{% endif %}
+                </td></tr>
+                {% endif %}
+                {% if doc.payment_reference %}<tr><td class="text-muted">เลขอ้างอิง:</td><td>{{ doc.payment_reference }}</td></tr>{% endif %}
+              {% endif %}
+            </table>
+          </div>
+        </div>
+
+        <table class="table table-sm mt-3">
+          <thead class="thead-light">
+            <tr>
+              <th class="text-center" style="width:38px;">#</th>
+              <th>รายการ</th>
+              <th class="text-right" style="width:80px;">จำนวน</th>
+              <th style="width:70px;">หน่วย</th>
+              <th class="text-right" style="width:110px;">ราคา</th>
+              <th class="text-right" style="width:70px;">ลด %</th>
+              <th class="text-right" style="width:120px;">รวม</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for it in doc.items %}
+            <tr>
+              <td class="text-center">{{ loop.index }}</td>
+              <td>
+                <strong>{{ it.name }}</strong>
+                {% if it.description %}<div class="text-sm text-muted">{{ it.description }}</div>{% endif %}
+              </td>
+              <td class="text-right">{{ it.quantity | qty }}</td>
+              <td>{{ it.unit }}</td>
+              <td class="text-right">{{ it.unit_price | money }}</td>
+              <td class="text-right">{{ it.discount_percent or 0 }}</td>
+              <td class="text-right"><strong>{{ it.line_total | money }}</strong></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        <div class="row mt-3">
+          <div class="col-md-7">
+            {% if doc.note %}
+            <small class="text-muted text-uppercase">หมายเหตุ</small>
+            <div style="white-space:pre-line;">{{ doc.note }}</div>
+            {% endif %}
+            {% if doc.terms %}
+            <small class="text-muted text-uppercase mt-2 d-block">เงื่อนไข</small>
+            <div style="white-space:pre-line;">{{ doc.terms }}</div>
+            {% endif %}
+          </div>
+          <div class="col-md-5">
+            <table class="table table-sm">
+              <tr><td class="text-muted">มูลค่ารวม</td><td class="text-right">{{ doc.subtotal | money }}</td></tr>
+              {% if doc.discount_amount and doc.discount_amount > 0 %}
+              <tr><td class="text-muted">ส่วนลดท้ายบิล</td><td class="text-right">-{{ doc.discount_amount | money }}</td></tr>
+              {% endif %}
+              <tr><td class="text-muted">หลังหักส่วนลด</td><td class="text-right">{{ doc.after_discount | money }}</td></tr>
+              <tr><td class="text-muted">VAT ({{ doc.vat_rate }}%)</td><td class="text-right">{{ doc.vat_amount | money }}</td></tr>
+              <tr class="bg-primary text-white"><td><strong>ยอดสุทธิ</strong></td>
+                  <td class="text-right h5 mb-0">{{ doc.grand_total | money }}</td></tr>
+            </table>
+            <div class="text-right text-muted" style="font-size:12px;">({{ doc.grand_total | baht_text }})</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="card card-outline card-info">
+      <div class="card-header"><h3 class="card-title">เปลี่ยนสถานะ</h3></div>
+      <div class="card-body">
+        <form method="post" action="{{ url_for('documents.set_status', doc_type=doc_type, doc_id=doc.id) }}">
+          <select name="status" class="form-control mb-2">
+            {% for s in statuses %}
+            <option value="{{ s }}" {% if doc.status == s %}selected{% endif %}>
+              {% if s == 'draft' %}ร่าง
+              {% elif s == 'sent' %}ส่งให้ลูกค้า
+              {% elif s == 'accepted' %}ลูกค้าตอบรับ
+              {% elif s == 'rejected' %}ลูกค้าปฏิเสธ
+              {% elif s == 'expired' %}หมดอายุ
+              {% elif s == 'converted' %}ออกเอกสารแล้ว
+              {% elif s == 'paid' %}ชำระแล้ว
+              {% elif s == 'partial' %}ชำระบางส่วน
+              {% elif s == 'overdue' %}เกินกำหนด
+              {% elif s == 'shipped' %}ส่งสินค้าแล้ว
+              {% elif s == 'delivered' %}ส่งถึงปลายทาง
+              {% elif s == 'issued' %}ออกแล้ว
+              {% elif s == 'void' %}ยกเลิก
+              {% else %}{{ s }}{% endif %}
+            </option>
+            {% endfor %}
+          </select>
+          <button class="btn btn-primary btn-block" type="submit">บันทึก</button>
+        </form>
+      </div>
+    </div>
+
+    {% if doc.derived_docs %}
+    <div class="card card-outline card-success">
+      <div class="card-header"><h3 class="card-title">เอกสารที่แปลงไป</h3></div>
+      <div class="card-body p-2">
+        {% for dd in doc.derived_docs %}
+        {% set lbl, color = dd.status_label() %}
+        <a href="{{ url_for('documents.view', doc_type=dd.doc_type, doc_id=dd.id) }}"
+           class="d-flex justify-content-between p-2 border-bottom text-dark">
+          <span><i class="fas {{ dd.type_info().icon }} text-{{ dd.type_info().color }} mr-1"></i>
+                <code>{{ dd.number }}</code></span>
+          <span class="badge badge-{{ color }}">{{ lbl }}</span>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="card">
+      <div class="card-header"><h3 class="card-title">ข้อมูลเอกสาร</h3></div>
+      <div class="card-body text-sm">
+        <div class="d-flex justify-content-between"><span class="text-muted">สร้างเมื่อ:</span>
+          <span>{{ doc.created_at.strftime('%d/%m/%Y %H:%M') if doc.created_at else '-' }}</span></div>
+        <div class="d-flex justify-content-between"><span class="text-muted">แก้ไขล่าสุด:</span>
+          <span>{{ doc.updated_at.strftime('%d/%m/%Y %H:%M') if doc.updated_at else '-' }}</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

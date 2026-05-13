@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="{{ get_lang() }}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{{ company.name if company else 'EasyBill' }}{% endblock %} | EasyBill v2.0</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/admin-lte/3.2.0/css/adminlte.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}?v=5">
+<link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/logo-mark.svg') }}">
+
+<style>
+/* ===== Theme CSS Custom Properties ===== */
+body { --theme-primary: #6366f1; --theme-primary-dark: #4f46e5; --theme-bg-light: #eef2ff; }
+body.theme-navy    { --theme-primary: #1e3a8a; --theme-primary-dark: #1e40af; --theme-bg-light: #dbeafe; }
+body.theme-forest  { --theme-primary: #166534; --theme-primary-dark: #14532d; --theme-bg-light: #d1fae5; }
+body.theme-maroon  { --theme-primary: #991b1b; --theme-primary-dark: #7f1d1d; --theme-bg-light: #fee2e2; }
+body.theme-purple  { --theme-primary: #6d28d9; --theme-primary-dark: #5b21b6; --theme-bg-light: #ede9fe; }
+body.theme-cyan    { --theme-primary: #0891b2; --theme-primary-dark: #0e7490; --theme-bg-light: #cffafe; }
+body.dark-mode     { --theme-primary: #a5b4fc; --theme-primary-dark: #818cf8; --theme-bg-light: #312e81; }
+
+/* ===== Toast notifications ===== */
+.toast-container {
+  position: fixed; top: 24px; left: 50%; transform: translateX(-50%);
+  z-index: 9999; display: flex; flex-direction: column; gap: 12px;
+  max-width: 520px; min-width: 320px; pointer-events: none;
+}
+.toast-item {
+  display: flex; align-items: center; gap: 14px;
+  background: #fff; border-radius: 12px; padding: 16px 22px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.25), 0 4px 12px rgba(0,0,0,0.1);
+  font-size: 15px; font-weight: 500;
+  pointer-events: auto;
+  animation: toastIn .35s cubic-bezier(.34,1.56,.64,1);
+  border-left: 6px solid;
+}
+.toast-item.fade-out { animation: toastOut .3s ease-in forwards; }
+@keyframes toastIn {
+  from { transform: translateY(-30px); opacity: 0; }
+  to   { transform: translateY(0);     opacity: 1; }
+}
+@keyframes toastOut {
+  to { transform: translateY(-30px); opacity: 0; }
+}
+.toast-icon { font-size: 26px; flex-shrink: 0; }
+.toast-msg  { flex: 1; color: #1e293b; line-height: 1.4; }
+.toast-close {
+  background: none; border: none; font-size: 22px;
+  color: #94a3b8; cursor: pointer; line-height: 1; padding: 0 4px;
+}
+.toast-close:hover { color: #475569; }
+.toast-success { border-left-color: #10b981; }
+.toast-success .toast-icon { color: #10b981; }
+.toast-danger  { border-left-color: #ef4444; }
+.toast-danger  .toast-icon { color: #ef4444; }
+.toast-warning { border-left-color: #f59e0b; }
+.toast-warning .toast-icon { color: #f59e0b; }
+.toast-info    { border-left-color: #3b82f6; }
+.toast-info    .toast-icon { color: #3b82f6; }
+
+body.dark-mode .toast-item { background: #1e293b; }
+body.dark-mode .toast-msg  { color: #f1f5f9; }
+
+/* ===== Top nav layout (PEAK-style) ===== */
+.peak-topbar {
+  background: linear-gradient(135deg, #bae6fd 0%, #7dd3fc 100%);
+  border-bottom: 1px solid #38bdf8;
+  box-shadow: 0 1px 4px rgba(14,165,233,0.18);
+  position: sticky; top: 0; z-index: 1030;
+}
+.peak-topbar-inner {
+  max-width: 1400px; margin: 0 auto;
+  display: flex; align-items: stretch;
+  padding: 0 16px;
+}
+.peak-brand {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 20px 12px 0;
+  border-right: 1px solid #38bdf8;
+  text-decoration: none;
+}
+.peak-brand img { height: 44px; }
+.peak-brand .text {
+  display: flex; flex-direction: column; line-height: 1.1;
+}
+.peak-brand .name { font-weight: 800; color: var(--theme-primary); font-size: 20px; }
+.peak-brand .ver  { font-size: 11px; color: #94a3b8; letter-spacing: 1px; }
+
+.peak-nav {
+  display: flex; align-items: stretch; flex: 1; overflow-x: auto;
+  margin: 0; padding: 0; list-style: none;
+}
+.peak-nav-item {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 12px 20px;
+  font-size: 15px; color: #0c4a6e; text-decoration: none;
+  border-bottom: 3px solid transparent;
+  transition: all .15s; min-width: 100px;
+  cursor: pointer;
+}
+.peak-nav-item:hover {
+  background: rgba(255,255,255,0.6); color: var(--theme-primary); text-decoration: none;
+}
+.peak-nav-item.active {
+  color: var(--theme-primary); border-bottom-color: var(--theme-primary);
+  background: #fff;
+  font-weight: 600;
+}
+.peak-nav-item i {
+  font-size: 24px; margin-bottom: 6px; color: inherit;
+}
+.peak-nav-item .label { white-space: nowrap; }
+.peak-nav-item .badge-new {
+  position: absolute; top: 6px; right: 6px;
+  background: #ef4444; color: #fff;
+  font-size: 10px; padding: 2px 7px; border-radius: 999px;
+  font-weight: 700; letter-spacing: 0.5px;
+}
+
+.peak-right {
+  display: flex; align-items: center; gap: 6px; padding-left: 12px;
+  border-left: 1px solid #38bdf8;
+}
+.peak-right-btn {
+  background: none; border: none; padding: 12px 14px;
+  color: #0c4a6e; cursor: pointer; border-radius: 8px;
+  font-size: 14px;
+}
+.peak-right-btn:hover { background: rgba(255,255,255,0.6); color: var(--theme-primary); }
+.peak-right-btn i { font-size: 17px; }
+
+/* Dropdown menus */
+.peak-dropdown {
+  position: absolute; top: 100%; right: 0; min-width: 180px;
+  background: #fff; border: 1px solid #e2e8f0; border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12); padding: 6px;
+  display: none; z-index: 1050;
+}
+.peak-dropdown.show { display: block; }
+.peak-dropdown a, .peak-dropdown button {
+  display: block; width: 100%; text-align: left;
+  padding: 10px 14px; border-radius: 6px;
+  font-size: 14px; color: #334155; text-decoration: none;
+  background: none; border: none; cursor: pointer;
+}
+.peak-dropdown a:hover, .peak-dropdown button:hover {
+  background: var(--theme-bg-light); color: var(--theme-primary);
+}
+.peak-dropdown a.active, .peak-dropdown button.active { background: var(--theme-bg-light); color: var(--theme-primary); font-weight: 600; }
+.peak-dropdown .divider { height:1px; background:#e2e8f0; margin:6px 0; }
+
+/* Content area */
+.peak-content { max-width: 1400px; margin: 0 auto; padding: 16px; }
+.peak-page-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px;
+}
+.peak-page-header h1 {
+  margin: 0; font-size: 20px; font-weight: 700; color: #1e293b;
+}
+
+/* Footer */
+.peak-footer {
+  text-align: center; padding: 20px; color: #94a3b8; font-size: 12px;
+  border-top: 1px solid #f1f5f9; margin-top: 32px;
+}
+.peak-footer strong { color: #64748b; }
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .peak-nav-item { min-width: 72px; padding: 8px 10px; font-size: 12px; }
+  .peak-nav-item i { font-size: 20px; margin-bottom: 4px; }
+  .peak-brand .text { display: none; }
+  .peak-brand img { height: 38px; }
+}
+
+/* Dark mode adjustments */
+body.dark-mode .peak-topbar { background: linear-gradient(135deg, #0c4a6e 0%, #075985 100%); border-bottom-color: #0369a1; }
+body.dark-mode .peak-brand .name { color: #f1f5f9; }
+body.dark-mode .peak-nav-item { color: #cbd5e1; }
+body.dark-mode .peak-nav-item:hover { background: #334155; color: #a5b4fc; }
+body.dark-mode .peak-nav-item.active { background: #312e81; color: #c7d2fe; }
+body.dark-mode .peak-dropdown { background: #1e293b; border-color: #334155; }
+body.dark-mode .peak-dropdown a, body.dark-mode .peak-dropdown button { color: #cbd5e1; }
+body.dark-mode .peak-dropdown a:hover, body.dark-mode .peak-dropdown button:hover { background: #334155; }
+body.dark-mode .peak-page-header h1 { color: #f1f5f9; }
+body.dark-mode .peak-content { color: #cbd5e1; }
+</style>
+{% block head %}{% endblock %}
+</head>
+<body class="hold-transition {{ theme.body }} {% if not current_user.is_authenticated %}login-page{% endif %}">
+
+{% if current_user.is_authenticated %}
+
+<!-- ===== Top Nav (PEAK style) ===== -->
+<nav class="peak-topbar">
+  <div class="peak-topbar-inner">
+    <a href="{{ url_for('main.dashboard') }}" class="peak-brand">
+      <img src="{{ url_for('static', filename='img/logo-mark.svg') }}" alt="EasyBill">
+      <div class="text">
+        <span class="name">EasyBill</span>
+        <span class="ver">v2.0</span>
+      </div>
+    </a>
+
+    <!-- Company switcher -->
+    {% if company %}
+    <div style="position:relative; display:flex; align-items:center; padding: 0 16px; border-right: 1px solid #f1f5f9;">
+      <button class="peak-dd-trigger" data-target="dd-company"
+              style="background: #fff; border: 1.5px solid #38bdf8; padding: 10px 16px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--theme-primary); font-weight: 600; max-width: 240px;">
+        <i class="fas fa-building"></i>
+        <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ company.name }}</span>
+        <i class="fas fa-chevron-down" style="font-size: 11px;"></i>
+      </button>
+      <div class="peak-dropdown" id="dd-company" style="min-width: 260px; left:0; right:auto;">
+        <div style="padding:8px 12px; font-size:11px; color:#94a3b8;">บริษัทของฉัน ({{ all_companies|length }})</div>
+        <div class="divider"></div>
+        {% for co in all_companies %}
+        <a href="{{ url_for('settings.switch_company', cid=co.id) }}" class="{% if co.id == company.id %}active{% endif %}">
+          <i class="fas fa-{% if co.id == company.id %}check-circle{% else %}building{% endif %} mr-2"></i>
+          {{ co.name }}
+        </a>
+        {% endfor %}
+        <div class="divider"></div>
+        <a href="{{ url_for('settings.new_company') }}" style="color: #10b981; font-weight: 600;">
+          <i class="fas fa-plus-circle mr-2"></i> เพิ่มกิจการใหม่
+        </a>
+        <a href="{{ url_for('settings.index') }}">
+          <i class="fas fa-cog mr-2"></i> จัดการบริษัท
+        </a>
+      </div>
+    </div>
+    {% endif %}
+
+    <ul class="peak-nav">
+      <a href="{{ url_for('main.dashboard') }}"
+         class="peak-nav-item {% if request.endpoint == 'main.dashboard' %}active{% endif %}">
+        <i class="fas fa-home"></i><span class="label">{{ _('หน้าแรก') }}</span>
+      </a>
+      <a href="{{ url_for('documents.index', doc_type='QT') }}"
+         class="peak-nav-item {% if request.blueprint == 'documents' %}active{% endif %}">
+        <i class="fas fa-file-invoice"></i><span class="label">{{ _('เอกสารขาย') }}</span>
+      </a>
+      <a href="{{ url_for('customers.index') }}"
+         class="peak-nav-item {% if request.blueprint == 'customers' %}active{% endif %}">
+        <i class="fas fa-users"></i><span class="label">{{ _('ลูกค้า') }}</span>
+      </a>
+      <a href="{{ url_for('products.index') }}"
+         class="peak-nav-item {% if request.blueprint == 'products' %}active{% endif %}">
+        <i class="fas fa-cube"></i><span class="label">{{ _('สินค้า / บริการ') }}</span>
+        <span class="badge-new">NEW</span>
+      </a>
+      <a href="{{ url_for('categories.index') }}"
+         class="peak-nav-item {% if request.blueprint == 'categories' %}active{% endif %}">
+        <i class="fas fa-tags"></i><span class="label">กลุ่มจัดประเภท</span>
+      </a>
+      <a href="{{ url_for('settings.index') }}"
+         class="peak-nav-item {% if request.blueprint == 'settings' %}active{% endif %}">
+        <i class="fas fa-cog"></i><span class="label">{{ _('ตั้งค่า') }}</span>
+      </a>
+      {% if current_user.is_admin() %}
+      <a href="{{ url_for('users.index') }}"
+         class="peak-nav-item {% if request.blueprint == 'users' %}active{% endif %}">
+        <i class="fas fa-users-cog"></i><span class="label">ผู้ใช้</span>
+      </a>
+      {% endif %}
+    </ul>
+
+    <div class="peak-right">
+      <!-- Language -->
+      <div style="position:relative;">
+        <button class="peak-right-btn peak-dd-trigger" data-target="dd-lang" title="{{ _('ภาษา') }}">
+          <i class="fas fa-globe"></i> {{ 'TH' if get_lang() == 'th' else 'EN' }}
+        </button>
+        <div class="peak-dropdown" id="dd-lang">
+          <form method="post" action="{{ url_for('settings.preferences') }}" style="margin:0;">
+            <input type="hidden" name="theme" value="{{ theme_name }}">
+            <button type="submit" name="lang" value="th" class="{% if get_lang() == 'th' %}active{% endif %}">🇹🇭 ภาษาไทย</button>
+            <button type="submit" name="lang" value="en" class="{% if get_lang() == 'en' %}active{% endif %}">🇬🇧 English</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Theme -->
+      <div style="position:relative;">
+        <button class="peak-right-btn peak-dd-trigger" data-target="dd-theme" title="{{ _('ธีมสี') }}">
+          <i class="fas fa-palette"></i>
+        </button>
+        <div class="peak-dropdown" id="dd-theme" style="min-width: 220px;">
+          {% for tkey, tinfo in THEMES.items() %}
+          <form method="post" action="{{ url_for('settings.preferences') }}" style="margin:0;">
+            <input type="hidden" name="lang" value="{{ get_lang() }}">
+            <button type="submit" name="theme" value="{{ tkey }}" class="{% if theme_name == tkey %}active{% endif %}">
+              {% if tkey == 'dark' %}🌙{% elif tkey == 'light' %}☀️{% elif tkey == 'forest' %}🌲
+              {% elif tkey == 'maroon' %}🔴{% elif tkey == 'navy' %}🌊
+              {% elif tkey == 'purple' %}💜{% else %}🔵{% endif %}
+              {{ tinfo.name_en if get_lang() == 'en' else tinfo.name }}
+            </button>
+          </form>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- User -->
+      <div style="position:relative;">
+        <button class="peak-right-btn peak-dd-trigger" data-target="dd-user">
+          <i class="fas fa-user-circle" style="font-size:22px;"></i>
+          <span class="d-none d-md-inline" style="margin-left:6px; font-size:14px;">{{ current_user.full_name or current_user.username }}</span>
+        </button>
+        <div class="peak-dropdown" id="dd-user">
+          <div style="padding:8px 12px; font-size:11px; color:#94a3b8;">{{ _('เข้าใช้เป็น') }} <strong>{{ current_user.username }}</strong></div>
+          <div class="divider"></div>
+          <a href="{{ url_for('settings.index') }}"><i class="fas fa-cog mr-2"></i> {{ _('ตั้งค่า') }}</a>
+          <a href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt mr-2"></i> {{ _('ออกจากระบบ') }}</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- ===== Content area ===== -->
+<div class="peak-content">
+  <div class="peak-page-header">
+    <h1>{% block page_title %}{% endblock %}</h1>
+    <div>{% block topbar_actions %}{% endblock %}</div>
+  </div>
+
+  {% with msgs = get_flashed_messages(with_categories=true) %}
+    {% if msgs %}
+    <div class="toast-container">
+    {% for cat, msg in msgs %}
+    {% set ac = {'success':'success','danger':'danger','warning':'warning','info':'info'}.get(cat, 'info') %}
+    <div class="toast-item toast-{{ ac }}">
+      <i class="fas fa-{% if ac == 'success' %}check-circle{% elif ac == 'danger' %}times-circle{% elif ac == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %} toast-icon"></i>
+      <span class="toast-msg">{{ msg }}</span>
+      <button type="button" class="toast-close" onclick="this.parentElement.classList.add('fade-out');">&times;</button>
+    </div>
+    {% endfor %}
+    </div>
+    {% endif %}
+  {% endwith %}
+
+  {% block content %}{% endblock %}
+</div>
+
+<footer class="peak-footer">
+  <strong>EasyBill v2.0</strong> &mdash; {{ _('โปรแกรมบัญชีออนไลน์') }}
+  · พัฒนาโดย <strong>แม่สรวยซิสเต็ม</strong>
+  : <a href="https://www.maesuaisystem.com" target="_blank" rel="noopener"
+       style="color: var(--theme-primary); text-decoration: none; font-weight: 600;">
+    www.maesuaisystem.com
+  </a>
+</footer>
+
+<script>
+// Dropdown toggle
+document.addEventListener('click', function(e) {
+  const trig = e.target.closest('.peak-dd-trigger');
+  if (trig) {
+    const id = trig.dataset.target;
+    document.querySelectorAll('.peak-dropdown').forEach(d => {
+      if (d.id !== id) d.classList.remove('show');
+    });
+    document.getElementById(id).classList.toggle('show');
+    e.stopPropagation();
+    return;
+  }
+  document.querySelectorAll('.peak-dropdown').forEach(d => d.classList.remove('show'));
+});
+
+// Auto-dismiss toast หลัง 4 วินาที (success/info) หรือ 7 วิ (danger/warning)
+document.querySelectorAll('.toast-item').forEach((t, i) => {
+  const delay = t.classList.contains('toast-danger') || t.classList.contains('toast-warning') ? 7000 : 4000;
+  setTimeout(() => {
+    t.classList.add('fade-out');
+    setTimeout(() => t.remove(), 300);
+  }, delay + (i * 200));  // เรียงเหลื่อมกัน
+});
+</script>
+
+{% else %}
+  {% block guest %}{% endblock %}
+{% endif %}
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.2/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

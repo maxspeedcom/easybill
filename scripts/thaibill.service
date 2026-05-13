@@ -1,0 +1,30 @@
+[Unit]
+Description=ThaiBill - Quotation Management System
+After=network.target
+
+[Service]
+Type=simple
+User=thaibill
+Group=thaibill
+WorkingDirectory=/opt/thaibill
+Environment="PATH=/opt/thaibill/venv/bin"
+Environment="FLASK_ENV=production"
+EnvironmentFile=/opt/thaibill/.env
+ExecStart=/opt/thaibill/venv/bin/gunicorn \
+    --workers 3 \
+    --bind 127.0.0.1:8000 \
+    --access-logfile /opt/thaibill/logs/access.log \
+    --error-logfile /opt/thaibill/logs/error.log \
+    --timeout 60 \
+    wsgi:app
+Restart=always
+RestartSec=5
+
+# Hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

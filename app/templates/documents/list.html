@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% block page_title %}
+<i class="fas {{ type_info.icon }} text-{{ type_info.color }} mr-2"></i>{{ _(type_info.name) }}
+{% endblock %}
+{% block topbar_actions %}
+<a class="btn btn-primary" href="{{ url_for('documents.edit', doc_type=doc_type) }}">
+  <i class="fas fa-plus"></i> {{ _('สร้าง') }}{{ _(type_info.name) }}
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <form method="get" class="form-inline">
+      <div class="input-group mr-2" style="min-width:320px;">
+        <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="{{ _('ค้นหา เลขที่ / ชื่อลูกค้า / โครงการ') }}">
+        <div class="input-group-append"><button class="btn btn-default"><i class="fas fa-search"></i></button></div>
+      </div>
+      <select class="form-control mr-2" name="status" onchange="this.form.submit()">
+        <option value="">{{ _('ทุกสถานะ') }}</option>
+        {% for s in statuses %}
+        <option value="{{ s }}" {% if status == s %}selected{% endif %}>
+          {% if s == 'draft' %}{{ _('ร่าง') }}
+          {% elif s == 'sent' %}{{ _('ส่งให้ลูกค้า') }}
+          {% elif s == 'accepted' %}{{ _('ลูกค้าตอบรับ') }}
+          {% elif s == 'rejected' %}{{ _('ลูกค้าปฏิเสธ') }}
+          {% elif s == 'expired' %}{{ _('หมดอายุ') }}
+          {% elif s == 'converted' %}{{ _('ออกเอกสารแล้ว') }}
+          {% elif s == 'paid' %}{{ _('ชำระแล้ว') }}
+          {% elif s == 'partial' %}{{ _('ชำระบางส่วน') }}
+          {% elif s == 'overdue' %}{{ _('เกินกำหนด') }}
+          {% elif s == 'shipped' %}{{ _('ส่งสินค้าแล้ว') }}
+          {% elif s == 'delivered' %}{{ _('ส่งถึงปลายทาง') }}
+          {% elif s == 'issued' %}{{ _('ออกแล้ว') }}
+          {% elif s == 'void' %}{{ _('ยกเลิก') }}
+          {% else %}{{ s }}{% endif %}
+        </option>
+        {% endfor %}
+      </select>
+      <span class="ml-auto text-muted">{{ _('ทั้งหมด') }} {{ docs|length }} {{ _('รายการ') }}</span>
+    </form>
+  </div>
+
+  <div class="card-body p-0">
+    <table class="table table-hover table-striped mb-0">
+      <thead><tr>
+        <th>{{ _('เลขที่') }}</th><th>{{ _('วันที่') }}</th><th>{{ _('ลูกค้า') }}</th>
+        <th>{{ _('โครงการ') }}</th><th class="text-right">{{ _('ยอดสุทธิ') }}</th>
+        <th>{{ _('สถานะ') }}</th><th></th>
+      </tr></thead>
+      <tbody>
+        {% for d in docs %}
+        {% set lbl, color = d.status_label() %}
+        <tr>
+          <td>
+            <a class="font-weight-bold" href="{{ url_for('documents.view', doc_type=doc_type, doc_id=d.id) }}">
+              <code>{{ d.number }}</code>
+            </a>
+            {% if d.source_doc %}<small class="text-muted d-block">↗ {{ d.source_doc.number }}</small>{% endif %}
+          </td>
+          <td>{{ d.issue_date | thaidate(short=True) }}</td>
+          <td>{{ d.customer_snapshot_name or '-' }}</td>
+          <td class="text-muted">{{ d.project_name or '-' }}</td>
+          <td class="text-right"><strong>{{ d.grand_total | money }}</strong></td>
+          <td><span class="badge badge-{{ color }}">{{ _(lbl) }}</span></td>
+          <td class="text-right">
+            <a class="btn btn-sm btn-default" href="{{ url_for('documents.view', doc_type=doc_type, doc_id=d.id) }}"><i class="fas fa-eye"></i></a>
+            <a class="btn btn-sm btn-default" href="{{ url_for('documents.edit', doc_type=doc_type, doc_id=d.id) }}"><i class="fas fa-edit"></i></a>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7">
+          <div class="text-center p-5 text-muted">
+            <i class="fas {{ type_info.icon }} fa-3x mb-3 d-block text-{{ type_info.color }}"></i>
+            <h5>{{ _('ยังไม่มี') }}{{ _(type_info.name) }}</h5>
+            <a class="btn btn-primary mt-2" href="{{ url_for('documents.edit', doc_type=doc_type) }}">
+              <i class="fas fa-plus"></i> {{ _('สร้าง') }}{{ _(type_info.name) }}
+            </a>
+          </div>
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

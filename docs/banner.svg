@@ -1,0 +1,137 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 360" preserveAspectRatio="xMidYMid meet">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#1e1b4b"/>
+      <stop offset="60%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </radialGradient>
+    <radialGradient id="bk-pink" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#f472b6" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#f472b6" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="bk-blue" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#60a5fa" stop-opacity="0.75"/>
+      <stop offset="100%" stop-color="#60a5fa" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="bk-purple" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#a78bfa" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#a78bfa" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="bk-cyan" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#22d3ee" stop-opacity="0.75"/>
+      <stop offset="100%" stop-color="#22d3ee" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="doc-grad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#f1f5f9"/>
+    </linearGradient>
+    <linearGradient id="header-grad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#bae6fd"/>
+      <stop offset="100%" stop-color="#7dd3fc"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="8"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="360" fill="url(#bg)"/>
+
+  <circle cx="120" cy="80"  r="140" fill="url(#bk-pink)"/>
+  <circle cx="500" cy="320" r="160" fill="url(#bk-blue)"/>
+  <circle cx="950" cy="100" r="180" fill="url(#bk-purple)"/>
+  <circle cx="1100" cy="280" r="120" fill="url(#bk-cyan)"/>
+  <circle cx="350" cy="180" r="80" fill="url(#bk-purple)" opacity="0.6"/>
+
+  <g opacity="0.7">
+    <circle cx="250" cy="60"  r="1.5" fill="#fff"/>
+    <circle cx="430" cy="90"  r="1.2" fill="#fff"/>
+    <circle cx="180" cy="200" r="1.4" fill="#fff"/>
+    <circle cx="600" cy="40"  r="1.3" fill="#fff"/>
+    <circle cx="780" cy="200" r="1.5" fill="#fff"/>
+    <circle cx="1050" cy="60" r="1.2" fill="#fff"/>
+    <circle cx="320" cy="290" r="1.6" fill="#fff"/>
+    <circle cx="700" cy="280" r="1.3" fill="#fff"/>
+    <circle cx="900" cy="240" r="1.4" fill="#fff"/>
+  </g>
+
+  <g transform="translate(70,90)">
+    <rect x="0" y="0" width="56" height="56" rx="14" fill="#0ea5e9"/>
+    <rect x="14" y="12" width="28" height="34" rx="3" fill="#fff"/>
+    <rect x="14" y="12" width="28" height="9" rx="3" fill="#bae6fd"/>
+    <line x1="19" y1="28" x2="37" y2="28" stroke="#0ea5e9" stroke-width="2" stroke-linecap="round"/>
+    <line x1="19" y1="34" x2="37" y2="34" stroke="#0ea5e9" stroke-width="2" stroke-linecap="round"/>
+    <line x1="19" y1="40" x2="32" y2="40" stroke="#0ea5e9" stroke-width="2" stroke-linecap="round"/>
+  </g>
+
+  <text x="148" y="135" font-family="-apple-system, 'Segoe UI', sans-serif" font-size="56" font-weight="700" fill="#ffffff">EasyBill</text>
+  <g transform="translate(395,108)">
+    <rect width="58" height="26" rx="13" fill="#a78bfa"/>
+    <text x="29" y="18" font-family="-apple-system, sans-serif" font-size="14" font-weight="700" fill="#1e1b4b" text-anchor="middle">v2.0</text>
+  </g>
+
+  <text x="148" y="180" font-family="-apple-system, sans-serif" font-size="22" fill="#cbd5e1" font-weight="400">โปรแกรมบัญชีออนไลน์สำหรับธุรกิจไทย</text>
+  <text x="148" y="208" font-family="-apple-system, sans-serif" font-size="16" fill="#94a3b8">Thai Online Accounting Software</text>
+
+  <g transform="translate(148,240)" font-family="-apple-system, sans-serif" font-size="13" font-weight="500">
+    <g>
+      <rect width="118" height="28" rx="14" fill="rgba(56,189,248,0.18)" stroke="rgba(56,189,248,0.5)"/>
+      <text x="14" y="19" fill="#7dd3fc">📄  5 documents</text>
+    </g>
+    <g transform="translate(128,0)">
+      <rect width="125" height="28" rx="14" fill="rgba(168,85,247,0.18)" stroke="rgba(168,85,247,0.5)"/>
+      <text x="14" y="19" fill="#c4b5fd">🏢  Multi-company</text>
+    </g>
+    <g transform="translate(263,0)">
+      <rect width="78" height="28" rx="14" fill="rgba(236,72,153,0.18)" stroke="rgba(236,72,153,0.5)"/>
+      <text x="14" y="19" fill="#f9a8d4">🔐  OAuth</text>
+    </g>
+    <g transform="translate(351,0)">
+      <rect width="98" height="28" rx="14" fill="rgba(34,211,238,0.18)" stroke="rgba(34,211,238,0.5)"/>
+      <text x="14" y="19" fill="#67e8f9">🇹🇭  TH / EN</text>
+    </g>
+  </g>
+
+  <text x="148" y="312" font-family="-apple-system, sans-serif" font-size="13" fill="#64748b">Quotation · Invoice · Delivery · Tax Invoice · Receipt</text>
+
+  <g transform="translate(820,55)" filter="url(#glow)">
+    <rect x="0" y="0" width="280" height="250" rx="0" fill="#a78bfa" opacity="0.35"/>
+  </g>
+
+  <g transform="translate(810,50) rotate(-6 140 125)">
+    <rect width="280" height="250" rx="12" fill="url(#doc-grad)"/>
+    <rect width="280" height="56" rx="12" fill="url(#header-grad)"/>
+    <rect width="280" height="46" y="10" fill="url(#header-grad)"/>
+    <text x="22" y="34" font-family="-apple-system, sans-serif" font-size="16" font-weight="700" fill="#0c4a6e">INVOICE</text>
+    <text x="258" y="34" font-family="-apple-system, sans-serif" font-size="12" font-weight="600" fill="#0c4a6e" text-anchor="end">IV-2025-001</text>
+
+    <text x="22" y="86" font-family="-apple-system, sans-serif" font-size="9" fill="#94a3b8">BILL TO</text>
+    <text x="22" y="102" font-family="-apple-system, sans-serif" font-size="11" font-weight="600" fill="#1e293b">บริษัท ABC จำกัด</text>
+    <text x="22" y="116" font-family="-apple-system, sans-serif" font-size="9" fill="#64748b">123 Tax ID: 0105-555-8888</text>
+
+    <line x1="22" y1="135" x2="258" y2="135" stroke="#e2e8f0" stroke-width="1"/>
+
+    <text x="22" y="153" font-family="-apple-system, sans-serif" font-size="10" font-weight="600" fill="#64748b">DESCRIPTION</text>
+    <text x="258" y="153" font-family="-apple-system, sans-serif" font-size="10" font-weight="600" fill="#64748b" text-anchor="end">AMOUNT</text>
+
+    <text x="22" y="172" font-family="-apple-system, sans-serif" font-size="11" fill="#1e293b">Web Development Service</text>
+    <text x="258" y="172" font-family="-apple-system, sans-serif" font-size="11" fill="#1e293b" text-anchor="end">50,000.00</text>
+
+    <text x="22" y="190" font-family="-apple-system, sans-serif" font-size="11" fill="#1e293b">Hosting (12 months)</text>
+    <text x="258" y="190" font-family="-apple-system, sans-serif" font-size="11" fill="#1e293b" text-anchor="end">12,000.00</text>
+
+    <text x="22" y="208" font-family="-apple-system, sans-serif" font-size="11" fill="#1e293b">SSL Certificate</text>
+    <text x="258" y="208" font-family="-apple-system, sans-serif" font-size="11" fill="#1e293b" text-anchor="end">2,500.00</text>
+
+    <line x1="22" y1="218" x2="258" y2="218" stroke="#e2e8f0" stroke-width="1"/>
+
+    <rect x="22" y="225" width="236" height="22" rx="4" fill="#f0f9ff"/>
+    <text x="32" y="240" font-family="-apple-system, sans-serif" font-size="11" font-weight="700" fill="#0c4a6e">TOTAL</text>
+    <text x="248" y="240" font-family="-apple-system, sans-serif" font-size="13" font-weight="700" fill="#0ea5e9" text-anchor="end">66,875.00 ฿</text>
+
+    <g transform="translate(220,90)">
+      <circle r="22" fill="#10b981"/>
+      <path d="M-9,0 L-3,7 L10,-7" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    </g>
+  </g>
+
+</svg>
