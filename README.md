@@ -59,7 +59,7 @@ Thai Online Accounting Software — Quotation · Invoice · Delivery · Tax Invo
 ### Clone และรัน
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/easybill.git
+git clone https://github.com/maxspeedcom/easybill.git
 cd easybill
 
 python3 -m venv venv
@@ -67,7 +67,7 @@ source venv/bin/activate
 
 pip install -r requirements.txt
 
-python run.py
+python wsgi.py
 ```
 
 เปิดเบราว์เซอร์ที่ http://localhost:5000
@@ -134,7 +134,7 @@ easybill/
 │   ├── migrate_v1_to_v2.py  # DB migration
 │   └── upgrade.sh           # Deploy script
 ├── instance/            # (gitignored) SQLite DB
-├── run.py               # entry point
+├── wsgi.py              # entry point
 └── requirements.txt
 ```
 
